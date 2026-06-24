@@ -8,7 +8,7 @@ Aggiornare dopo ogni sessione significativa o su comando **mi fermo**.
 - **Non usare ora:** `daytrip-clone` come workspace attivo (solo import moduli in Fase 2+)
 - **Supabase:** pausato — restore solo quando iniziamo Fase 2
 - **Locale:** `npm run dev -- --port 3002` → http://localhost:3002/it
-- **Manca su GitHub:** molte modifiche locali post 2026-05-01 (i18n, GDPR, booking API, proxy)
+- **GitHub:** allineato — commit `4b57e9a` su `main`
 
 ## Tu (proprietario) — cosa fai
 
@@ -29,9 +29,9 @@ Aggiornare dopo ogni sessione significativa o su comando **mi fermo**.
 
 ## Riprendi da qui
 
-1. Leggi `PLATFORM_MAP.md` → fase corrente  
-2. `cd ~/progetti/mychauffeur-new && npm run dev -- --port 3002`  
-3. In chat Agent: *«Continua dalla fase X in PLATFORM_MAP»*
+1. Leggi `PLATFORM_MAP.md` → fase corrente (**1: deploy**)  
+2. Locale: `npm run dev -- --port 3002` → http://localhost:3002/it  
+3. Prossimo: deploy **Vercel** + (poi) email SMTP e Google Maps
 
 ## File chiave
 

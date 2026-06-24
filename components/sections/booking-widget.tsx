@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CarFront, Sparkles, Van } from "lucide-react";
 import { useCookieConsent } from "@/components/gdpr/cookie-consent-context";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { canLoadThirdPartyMaps } from "@/lib/cookie-consent";
+import {
+  mergeRoundTripQuotes,
+  saveBookingFlowSnapshot,
+  type CalculateApiResponse,
+} from "@/lib/booking-flow-storage";
 import { cn } from "@/lib/utils";
+import { DatePickerField } from "@/components/booking/date-picker-field";
+import { TimePickerField } from "@/components/booking/time-picker-field";
 import type { Messages } from "@/messages/types";
 
 declare global {
@@ -42,12 +49,16 @@ export function BookingWidget({
 }) {
   const b = dict.booking;
   const pathname = usePathname();
+  const router = useRouter();
   const { ready, consent } = useCookieConsent();
   const mapsAllowed = ready && canLoadThirdPartyMaps(consent);
   const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
   const [rideDate, setRideDate] = useState("");
   const [rideTime, setRideTime] = useState("");
+  const [addReturn, setAddReturn] = useState(false);
+  const [returnDate, setReturnDate] = useState("");
+  const [returnTime, setReturnTime] = useState("");
   const [passengers, setPassengers] = useState("");
   const [vehicleType, setVehicleType] = useState<"sedan" | "van" | "other">(
     "sedan"
@@ -58,6 +69,7 @@ export function BookingWidget({
   const [submitState, setSubmitState] = useState<"idle" | "success" | "error">(
     "idle"
   );
+  const [submitError, setSubmitError] = useState("");
   const vehicleOptions = [
     {
       key: "sedan" as const,
@@ -116,46 +128,128 @@ export function BookingWidget({
     Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 
   const locale = pathname?.split("/")[1] ?? "it";
+  const minRideDate = new Date().toISOString().slice(0, 10);
+
+  async function fetchQuote(origin: string, destination: string): Promise<CalculateApiResponse> {
+    const calcRes = await fetch("/api/trips/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ origin, destination, stops: [] }),
+    });
+    const calcPayload = (await calcRes.json()) as CalculateApiResponse;
+    if (!calcRes.ok || !calcPayload.success || !calcPayload.quotes) {
+      throw new Error(calcPayload.error ?? "quote failed");
+    }
+    return calcPayload;
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmitting) return;
 
     setSubmitState("idle");
+    setSubmitError("");
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/booking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pickupLocation,
-          dropoffLocation,
-          rideDate,
-          rideTime,
-          passengers,
-          vehicleType,
-          vehicleOtherDetails:
-            vehicleType === "other" ? vehicleOtherDetails.trim() : undefined,
-          locale,
-          inquiryType: isB2B ? "b2b" : "standard",
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed booking request");
+      const timeRe = /^\d{2}:\d{2}$/;
+      if (!timeRe.test(rideTime)) {
+        throw new Error(b.timeError);
+      }
+      if (addReturn && !timeRe.test(returnTime)) {
+        throw new Error(b.timeError);
       }
 
-      setSubmitState("success");
-      setPickupLocation("");
-      setDropoffLocation("");
-      setRideDate("");
-      setRideTime("");
-      setPassengers("");
-      setVehicleType("sedan");
-      setVehicleOtherDetails("");
-      setIsB2B(false);
-    } catch {
+      if (isB2B) {
+        const res = await fetch("/api/booking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pickupLocation,
+            dropoffLocation,
+            rideDate,
+            rideTime,
+            passengers,
+            vehicleType,
+            vehicleOtherDetails:
+              vehicleType === "other" ? vehicleOtherDetails.trim() : undefined,
+            locale,
+            inquiryType: "b2b",
+          }),
+        });
+        if (!res.ok) {
+          throw new Error("Failed booking request");
+        }
+        setSubmitState("success");
+        setPickupLocation("");
+        setDropoffLocation("");
+        setRideDate("");
+        setRideTime("");
+        setAddReturn(false);
+        setReturnDate("");
+        setReturnTime("");
+        setPassengers("");
+        setVehicleType("sedan");
+        setVehicleOtherDetails("");
+        setIsB2B(false);
+        return;
+      }
+
+      if (addReturn) {
+        if (!returnDate.trim()) {
+          throw new Error("return date required");
+        }
+        if (returnDate < rideDate) {
+          throw new Error(b.returnDateError);
+        }
+      }
+
+      const outbound = await fetchQuote(pickupLocation, dropoffLocation);
+      let quotes = outbound.quotes!;
+      let distanceKm = outbound.distanceKm ?? 0;
+      let durationMinutesEstimate = outbound.durationMinutesEstimate ?? 0;
+      let provider = outbound.provider ?? "simulated";
+
+      if (addReturn) {
+        const returnLeg = await fetchQuote(dropoffLocation, pickupLocation);
+        quotes = mergeRoundTripQuotes(quotes, returnLeg.quotes!);
+        distanceKm += returnLeg.distanceKm ?? 0;
+        durationMinutesEstimate += returnLeg.durationMinutesEstimate ?? 0;
+        if (returnLeg.provider === "google" || provider === "google") {
+          provider = "google";
+        }
+      }
+
+      const passengersNum = Math.max(1, Number(passengers) || 1);
+      const preferredVehicle =
+        vehicleType === "van" ? "van" : vehicleType === "other" ? "luxury" : "sedan";
+
+      saveBookingFlowSnapshot({
+        version: 1,
+        pickup: pickupLocation.trim(),
+        destination: dropoffLocation.trim(),
+        travelDate: rideDate,
+        pickupTime: rideTime,
+        passengers: passengersNum,
+        luggageCount: 0,
+        bookingMode: addReturn ? "round_trip" : "one_way",
+        addReturn,
+        returnDate: addReturn ? returnDate : "",
+        returnTime: addReturn ? returnTime : "",
+        selectedPoiIds: [],
+        selectedVehicle: preferredVehicle,
+        currency: outbound.currency ?? "EUR",
+        provider,
+        distanceKm,
+        durationMinutesEstimate,
+        pricingRule: outbound.pricingRule ?? null,
+        quotes,
+        updatedAt: new Date().toISOString(),
+      });
+
+      router.push(`/${locale}/book`);
+    } catch (err) {
       setSubmitState("error");
+      setSubmitError(err instanceof Error ? err.message : b.error);
     } finally {
       setIsSubmitting(false);
     }
@@ -164,7 +258,7 @@ export function BookingWidget({
   return (
     <Card
       className={cn(
-        "border-border/90 bg-card/95 shadow-2xl shadow-black/40 backdrop-blur-md",
+        "relative z-20 border-border/90 bg-card/95 shadow-2xl shadow-black/40 backdrop-blur-md",
         className
       )}
     >
@@ -206,30 +300,75 @@ export function BookingWidget({
             onChange={(event) => setDropoffLocation(event.target.value)}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-start">
           <div className="grid gap-2">
             <Label htmlFor="ride-date">{b.labelDate}</Label>
-            <Input
+            <DatePickerField
               id="ride-date"
-              type="date"
-              className="h-10 md:h-11 min-w-0"
-              required
               value={rideDate}
-              onChange={(event) => setRideDate(event.target.value)}
+              onChange={setRideDate}
+              min={minRideDate}
+              required
+              locale={locale}
+              placeholder={b.placeholderDate}
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="ride-time">{b.labelTime}</Label>
-            <Input
+            <Label htmlFor="ride-time-hour">{b.labelTime}</Label>
+            <TimePickerField
               id="ride-time"
-              type="time"
-              className="h-10 md:h-11 min-w-0"
-              required
               value={rideTime}
-              onChange={(event) => setRideTime(event.target.value)}
+              onChange={setRideTime}
+              required
+              locale={locale}
+              minuteStep={15}
             />
           </div>
         </div>
+        <div className="rounded-lg border border-border bg-muted/30 p-3">
+          <label className="flex items-start gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={addReturn}
+              onChange={(event) => {
+                setAddReturn(event.target.checked);
+                if (!event.target.checked) {
+                  setReturnDate("");
+                  setReturnTime("");
+                }
+              }}
+            />
+            <span className="text-foreground">{b.labelAddReturn}</span>
+          </label>
+        </div>
+        {addReturn ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-start">
+            <div className="grid gap-2">
+              <Label htmlFor="return-date">{b.labelReturnDate}</Label>
+              <DatePickerField
+                id="return-date"
+                value={returnDate}
+                onChange={setReturnDate}
+                min={rideDate || minRideDate}
+                required
+                locale={locale}
+                placeholder={b.placeholderReturnDate}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="return-time-hour">{b.labelReturnTime}</Label>
+              <TimePickerField
+                id="return-time"
+                value={returnTime}
+                onChange={setReturnTime}
+                required
+                locale={locale}
+                minuteStep={15}
+              />
+            </div>
+          </div>
+        ) : null}
         <div className="grid gap-2">
           <Label htmlFor="ride-passengers">{b.labelPassengers}</Label>
           <Input
@@ -310,12 +449,15 @@ export function BookingWidget({
         ) : null}
         {submitState === "error" ? (
           <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
-            {b.error}
+            {submitError || b.error}
           </p>
         ) : null}
         <Button className="mt-1 w-full" size="lg" type="submit" disabled={isSubmitting}>
           {isSubmitting ? b.sending : b.submit}
         </Button>
+        {isSubmitting ? (
+          <p className="text-center text-xs text-muted-foreground">{b.calculating ?? b.sending}</p>
+        ) : null}
         </form>
       </CardContent>
       {showDevKeyHint ? (

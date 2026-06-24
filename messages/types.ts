@@ -44,6 +44,14 @@ export type Messages = {
     labelTo: string;
     labelDate: string;
     labelTime: string;
+    labelAddReturn: string;
+    labelReturnDate: string;
+    labelReturnTime: string;
+    placeholderDate: string;
+    placeholderReturnDate: string;
+    openCalendar: string;
+    returnDateError: string;
+    timeError: string;
     labelPassengers: string;
     labelVehicle: string;
     placeholderFrom: string;
@@ -58,6 +66,7 @@ export type Messages = {
     b2bHint: string;
     submit: string;
     sending: string;
+    calculating?: string;
     success: string;
     error: string;
     policyNote: string;

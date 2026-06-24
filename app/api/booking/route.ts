@@ -44,6 +44,30 @@ export async function POST(req: Request) {
       vehicleOtherDetails: toTrimmedString(body.vehicleOtherDetails) || undefined,
       locale: toTrimmedString(body.locale) || undefined,
       inquiryType: body.inquiryType === "b2b" ? "b2b" : "standard",
+      quotedPrice:
+        typeof body.quotedPrice === "number" && Number.isFinite(body.quotedPrice)
+          ? body.quotedPrice
+          : undefined,
+      quoteCurrency: toTrimmedString(body.quoteCurrency) || undefined,
+      distanceKm:
+        typeof body.distanceKm === "number" && Number.isFinite(body.distanceKm)
+          ? body.distanceKm
+          : undefined,
+      durationMinutes:
+        typeof body.durationMinutes === "number" && Number.isFinite(body.durationMinutes)
+          ? body.durationMinutes
+          : undefined,
+      quoteId:
+        typeof body.quoteId === "string" && body.quoteId.trim()
+          ? body.quoteId.trim()
+          : body.quoteId === null
+            ? null
+            : undefined,
+      addReturn: body.addReturn === true,
+      returnDate: toTrimmedString(body.returnDate) || undefined,
+      returnTime: toTrimmedString(body.returnTime) || undefined,
+      bookingMode:
+        body.bookingMode === "round_trip" ? "round_trip" : "one_way",
     };
 
     const error = validatePayload(payload);

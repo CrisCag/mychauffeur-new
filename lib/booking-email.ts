@@ -50,7 +50,21 @@ export async function sendBookingEmail(
     `Ora corsa: ${request.rideTime}`,
     `Passeggeri: ${request.passengers}`,
     `Veicolo: ${vehicleLabel}`,
-  ].join("\n");
+    request.quotedPrice != null
+      ? `Prezzo indicativo: ${request.quoteCurrency ?? "EUR"} ${request.quotedPrice}`
+      : "",
+    request.distanceKm != null ? `Distanza stimata: ${request.distanceKm} km` : "",
+    request.durationMinutes != null
+      ? `Durata stimata: ${request.durationMinutes} min`
+      : "",
+    request.quoteId ? `Quote ID: ${request.quoteId}` : "",
+    request.addReturn && request.returnDate
+      ? `Ritorno: ${request.returnDate}${request.returnTime ? ` ${request.returnTime}` : ""}`
+      : "",
+    request.bookingMode === "round_trip" ? "Tipo: andata e ritorno" : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   await transporter.sendMail({
     from: process.env.BOOKING_FROM_EMAIL,

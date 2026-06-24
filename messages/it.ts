@@ -35,6 +35,14 @@ export const it: Messages = {
     labelTo: "Destinazione",
     labelDate: "Data",
     labelTime: "Ora",
+    labelAddReturn: "Aggiungi viaggio di ritorno",
+    labelReturnDate: "Data ritorno",
+    labelReturnTime: "Ora ritorno",
+    placeholderDate: "Scegli data",
+    placeholderReturnDate: "Scegli data ritorno",
+    openCalendar: "Apri calendario",
+    returnDateError: "La data di ritorno deve essere uguale o successiva alla partenza.",
+    timeError: "Seleziona un orario valido (ora e minuti).",
     labelPassengers: "Numero passeggeri",
     labelVehicle: "Tipologia veicolo",
     placeholderFrom: "Es. Fiumicino T1, Via Roma 12 Spoleto…",
@@ -50,11 +58,12 @@ export const it: Messages = {
     b2bHint:
       "(se selezionato, la richiesta viene instradata al team partners)",
     submit: "Ottieni preventivo",
-    sending: "Invio in corso...",
+    sending: "Calcolo prezzo…",
+    calculating: "Calcolo del preventivo in corso…",
     success:
       "Richiesta inviata. Ti ricontattiamo a breve per conferma disponibilita e tariffa.",
     error:
-      "Non siamo riusciti a inviare la richiesta. Riprova tra qualche minuto o chiamaci direttamente.",
+      "Non siamo riusciti a calcolare il preventivo. Verifica che il server sia avviato (npm run dev) e riprova.",
     policyNote:
       "Operativita 24/7 salvo disponibilita dei veicoli. Attese e tempi di cortesia secondo policy di servizio condivisa in conferma.",
     paymentNote:

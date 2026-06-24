@@ -35,6 +35,14 @@ export const en: Messages = {
     labelTo: "Drop-off",
     labelDate: "Date",
     labelTime: "Time",
+    labelAddReturn: "Add return trip",
+    labelReturnDate: "Return date",
+    labelReturnTime: "Return time",
+    placeholderDate: "Pick a date",
+    placeholderReturnDate: "Pick return date",
+    openCalendar: "Open calendar",
+    returnDateError: "Return date must be on or after the outbound date.",
+    timeError: "Select a valid time (hour and minutes).",
     labelPassengers: "Passengers",
     labelVehicle: "Vehicle type",
     placeholderFrom: "e.g. Fiumicino T1, 12 Via Roma Spoleto…",
@@ -49,11 +57,12 @@ export const en: Messages = {
     labelB2B: "Corporate/B2B request",
     b2bHint: "(if selected, the request is routed to the partners team)",
     submit: "Get a quote",
-    sending: "Sending request...",
+    sending: "Calculating price…",
+    calculating: "Fetching your quote…",
     success:
       "Request sent. We will contact you shortly to confirm availability and fare.",
     error:
-      "We could not send your request. Please try again in a few minutes or call us directly.",
+      "We could not calculate your quote. Make sure the dev server is running (npm run dev) and try again.",
     policyNote:
       "Operations are 24/7 subject to vehicle availability. Waiting windows follow the service policy shared in your confirmation.",
     paymentNote:

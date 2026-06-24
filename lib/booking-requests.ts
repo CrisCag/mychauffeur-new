@@ -13,6 +13,15 @@ export type BookingRequestInput = {
   locale?: string;
   inquiryType?: "standard" | "b2b";
   destinationEmail?: string;
+  quotedPrice?: number;
+  quoteCurrency?: string;
+  distanceKm?: number;
+  durationMinutes?: number;
+  quoteId?: string | null;
+  addReturn?: boolean;
+  returnDate?: string;
+  returnTime?: string;
+  bookingMode?: "one_way" | "round_trip";
 };
 
 export type StoredBookingRequest = BookingRequestInput & {
