@@ -6,69 +6,64 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MotionFade } from "@/components/ui/motion-fade";
+import type { Locale } from "@/lib/i18n-config";
+import type { Messages } from "@/messages/types";
 import { Plane, Clock, BriefcaseBusiness } from "lucide-react";
 
-const services = [
-  {
-    title: "Transfer aeroportuali",
-    description:
-      "Monitoraggio voli, accoglienza in arrivo e pickup puntuale da e per i principali hub italiani.",
-    icon: Plane,
-  },
-  {
-    title: "Disposizione oraria",
-    description:
-      "Autista dedicato per mezza giornata o giornata intera: meeting, shopping, tour e itinerari multi-stop.",
-    icon: Clock,
-  },
-  {
-    title: "Viaggi business",
-    description:
-      "Logistica executive per roadshow, ospiti corporate e spostamenti city-to-city con massima riservatezza.",
-    icon: BriefcaseBusiness,
-  },
-];
+const icons = [Plane, Clock, BriefcaseBusiness] as const;
 
-export function ServicesSection() {
+type ServicesSectionProps = {
+  locale: Locale;
+  dict: Messages;
+};
+
+export function ServicesSection({ locale, dict }: ServicesSectionProps) {
+  const s = dict.servicesSection;
+  const base = `/${locale}`;
+
   return (
-    <section id="servizi" className="scroll-mt-24 py-20 md:py-24">
+    <section
+      id="servizi"
+      className="scroll-mt-24 border-t border-border/40 py-16 md:py-20"
+    >
       <div className="mx-auto w-full max-w-6xl px-6 md:px-10">
         <div className="mb-12 max-w-2xl">
           <p className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
-            Servizi
+            {s.kicker}
           </p>
           <h2 className="mt-3 font-heading text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Soluzioni su misura per ogni esigenza
+            {s.title}
           </h2>
-          <p className="mt-4 text-muted-foreground">
-            Dalla singola corsa alla gestione completa della mobilità premium.
-          </p>
+          <p className="mt-4 text-muted-foreground">{s.subtitle}</p>
         </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {services.map(({ title, description, icon: Icon }) => (
-            <Card
-              key={title}
-              className="border-border/80 bg-card/80 transition-shadow hover:shadow-lg hover:shadow-primary/5"
-            >
-              <CardHeader className="pb-2">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted/50 text-primary">
-                  <Icon className="size-5" aria-hidden />
-                </div>
-                <CardTitle className="mt-3 text-lg">{title}</CardTitle>
-                <CardDescription className="text-base leading-relaxed">
-                  {description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <Link
-                  href="/servizi"
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  Approfondisci →
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {s.cards.map((card, idx) => {
+            const Icon = icons[idx];
+            return (
+              <MotionFade key={card.title} delay={idx * 0.06}>
+                <Card className="border-border/70 bg-transparent">
+                  <CardHeader className="pb-2">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-border/70 text-primary">
+                      <Icon className="size-5" aria-hidden />
+                    </div>
+                    <CardTitle className="mt-3 text-lg">{card.title}</CardTitle>
+                    <CardDescription className="text-base leading-relaxed">
+                      {card.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <Link
+                      href={`${base}/servizi`}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      {s.readMore}
+                    </Link>
+                  </CardContent>
+                </Card>
+              </MotionFade>
+            );
+          })}
         </div>
       </div>
     </section>

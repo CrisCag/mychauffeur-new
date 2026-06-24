@@ -1,7 +1,17 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { Locale } from "@/lib/i18n-config";
+import type { Messages } from "@/messages/types";
 
-export function CtaSection() {
+type CtaSectionProps = {
+  locale: Locale;
+  dict: Messages;
+};
+
+export function CtaSection({ locale, dict }: CtaSectionProps) {
+  const c = dict.cta;
+  const base = `/${locale}`;
+
   return (
     <section className="py-16 md:py-20">
       <div className="mx-auto max-w-6xl px-6 md:px-10">
@@ -12,18 +22,15 @@ export function CtaSection() {
           />
           <div className="relative max-w-2xl">
             <h2 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-              Pronto per il tuo prossimo transfer?
+              {c.title}
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              Prenota in pochi passaggi o richiedi un preventivo personalizzato
-              per eventi e disposizioni lunghe.
-            </p>
+            <p className="mt-3 text-muted-foreground">{c.body}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
-                <a href="#prenota">Inizia dalla prenotazione</a>
+                <a href="#prenota">{c.book}</a>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/servizi">Vedi tutti i servizi</Link>
+                <Link href={`${base}/servizi`}>{c.allServices}</Link>
               </Button>
             </div>
           </div>
