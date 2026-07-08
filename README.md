@@ -22,7 +22,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - API endpoint: `app/api/booking/route.ts`
 - Storage helper: `lib/booking-requests.ts`
 - Email helper: `lib/booking-email.ts`
-- Local data file (runtime): `data/booking-requests.json` (ignored by git)
+- Runtime data (never commit): `data/booking-requests.json`, `data/operational-trips.json` — see `data/README.md`
 
 The booking widget posts to `POST /api/booking` with:
 
@@ -54,6 +54,30 @@ BOOKING_FROM_EMAIL=booking@mychauffeur.it
 Routing logic:
 - standard requests -> `info@mychauffeur.it`
 - B2B requests -> `bypartners@mychauffeur.it`
+
+## Google Maps (autocomplete + mappa percorso)
+
+1. In [Google Cloud Console](https://console.cloud.google.com/) seleziona il progetto MyChauffeur.
+2. **API e servizi → Libreria** — abilita:
+   - Maps JavaScript API
+   - **Places API (New)** ← autocomplete indirizzi (widget nuovo)
+   - Directions API
+   - Geocoding API
+3. **Credenziali → Crea credenziali → Chiave API**.
+4. Copia `.env.example` in `.env.local` e incolla la chiave:
+
+```env
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIza...
+GOOGLE_MAPS_API_KEY=AIza...
+```
+
+(`GOOGLE_MAPS_API_KEY` è usata lato server per km/percorso; puoi usare la stessa chiave.)
+
+5. **Restrizioni chiave (consigliato):**
+   - Applicazione: siti web → `http://127.0.0.1:3002/*`, `http://localhost:3002/*`, `https://www.mychauffeur.it/*`
+   - API: **Places API (New)** (autocomplete server), Maps JavaScript API, Directions API, Geocoding API
+6. **Fatturazione** attiva sul progetto Google Cloud (obbligatoria per Maps).
+7. Riavvia `npm run dev`. Accetta i **cookie funzionali** nel banner (autocomplete invia query al nostro server → Google Places).
 
 ## Notes
 

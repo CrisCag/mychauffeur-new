@@ -23,7 +23,10 @@
 # misc
 .DS_Store
 *.pem
+
+# Runtime data (PII / operational) — never commit; see data/README.md
 /data/booking-requests.json
+/data/operational-trips.json
 
 # debug
 npm-debug.log*
