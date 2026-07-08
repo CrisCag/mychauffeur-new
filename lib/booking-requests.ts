@@ -8,7 +8,7 @@ export type BookingRequestInput = {
   rideDate: string;
   rideTime: string;
   passengers: string;
-  vehicleType: "sedan" | "van" | "other";
+  vehicleType: "sedan" | "van" | "luxury" | "other";
   vehicleOtherDetails?: string;
   locale?: string;
   inquiryType?: "standard" | "b2b";
@@ -22,6 +22,20 @@ export type BookingRequestInput = {
   returnDate?: string;
   returnTime?: string;
   bookingMode?: "one_way" | "round_trip";
+  noRushVip?: boolean;
+  selectedPoiIds?: string[];
+  selectedStopNames?: string[];
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  tripStops?: Array<{
+    kind: "catalog" | "custom";
+    id: string;
+    label: string;
+    address?: string;
+    durationMinutes: number;
+  }>;
+  stopsSummary?: string;
 };
 
 export type StoredBookingRequest = BookingRequestInput & {

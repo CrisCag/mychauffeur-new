@@ -31,7 +31,9 @@ export async function sendBookingEmail(
       ? "Berlina/Sedan"
       : request.vehicleType === "van"
         ? "Van"
-        : `Altro (${request.vehicleOtherDetails ?? "non specificato"})`;
+        : request.vehicleType === "luxury"
+          ? "Luxury"
+          : `Altro (${request.vehicleOtherDetails ?? "non specificato"})`;
 
   const subjectPrefix = request.inquiryType === "b2b" ? "[B2B]" : "[BOOKING]";
   const subject = `${subjectPrefix} Nuova richiesta #${request.id.slice(0, 8)}`;
@@ -50,6 +52,9 @@ export async function sendBookingEmail(
     `Ora corsa: ${request.rideTime}`,
     `Passeggeri: ${request.passengers}`,
     `Veicolo: ${vehicleLabel}`,
+    request.guestName ? `Cliente: ${request.guestName}` : "",
+    request.guestEmail ? `Email: ${request.guestEmail}` : "",
+    request.guestPhone ? `Telefono: ${request.guestPhone}` : "",
     request.quotedPrice != null
       ? `Prezzo indicativo: ${request.quoteCurrency ?? "EUR"} ${request.quotedPrice}`
       : "",
@@ -62,6 +67,19 @@ export async function sendBookingEmail(
       ? `Ritorno: ${request.returnDate}${request.returnTime ? ` ${request.returnTime}` : ""}`
       : "",
     request.bookingMode === "round_trip" ? "Tipo: andata e ritorno" : "",
+    request.noRushVip ? "Modalità: No Rush VIP Max Comfort" : "",
+    request.selectedStopNames?.length
+      ? `Fermate turistiche: ${request.selectedStopNames.join(", ")}`
+      : "",
+    request.stopsSummary ? `Fermate (dettaglio): ${request.stopsSummary}` : "",
+    request.tripStops?.length
+      ? request.tripStops
+          .map(
+            (s) =>
+              `- ${s.label}${s.address ? ` (${s.address})` : ""}: ${s.durationMinutes} min`
+          )
+          .join("\n")
+      : "",
   ]
     .filter(Boolean)
     .join("\n");

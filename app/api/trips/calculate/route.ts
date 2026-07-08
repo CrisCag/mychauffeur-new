@@ -1,23 +1,113 @@
+import { applyNoRushMarkup, loadComfortModeConfig } from "@/lib/platform/comfort-mode";
+import { enforceApiRateLimit } from "@/lib/api/enforce-rate-limit";
+import { clientFacingMessage } from "@/lib/api/production-errors";
 import { insertQuotesBatch } from "@/lib/platform/quotes";
 import { QUOTE_ERROR_OUT_OF_AREA } from "@/lib/platform/quote-errors";
 import { tryGetSupabaseAdminClient } from "@/lib/platform/supabase-admin";
 import { computeTripQuotesAllVehicles } from "@/lib/platform/trip-pricing";
-import type { TripVehicleType } from "@/types/trip";
+import type { TripStopInput, TripVehicleType } from "@/types/trip";
 import { NextResponse } from "next/server";
+
+type StopPayload = {
+  kind?: "catalog" | "custom";
+  id?: string;
+  poiId?: string;
+  label?: string;
+  address?: string;
+  durationMinutes?: number;
+  lat?: number;
+  lng?: number;
+};
 
 type CalculatePayload = {
   origin: string;
   destination: string;
-  stops?: string[];
+  pickupTime?: string;
+  /** Nuovo formato */
+  stops?: StopPayload[];
+  /** Retrocompatibilità */
+  stopIds?: string[];
+  noRushVip?: boolean;
 };
 
 const VEHICLE_ORDER: TripVehicleType[] = ["sedan", "van", "luxury"];
 
 function jsonError(message: string, status: number) {
-  return NextResponse.json({ error: message, success: false }, { status });
+  return NextResponse.json(
+    {
+      error: clientFacingMessage(message, "Unable to calculate trip quote."),
+      success: false,
+    },
+    { status }
+  );
+}
+
+function scaleQuoteForNoRush<T extends { totalPrice: number; breakdown: { totalPrice: number; costoBase: number; costoKm: number; costoSoste: number; costoAttesa: number; costoDeviazione: number; extraVeicolo: number } }>(
+  slice: T,
+  markupPercent: number
+): T {
+  if (markupPercent <= 0) return slice;
+  const newTotal = applyNoRushMarkup(slice.totalPrice, markupPercent);
+  const factor = newTotal / slice.totalPrice;
+  const b = slice.breakdown;
+  const round = (n: number) => Math.round(n * factor * 100) / 100;
+  return {
+    ...slice,
+    totalPrice: newTotal,
+    breakdown: {
+      costoBase: round(b.costoBase),
+      costoKm: round(b.costoKm),
+      costoSoste: round(b.costoSoste),
+      costoAttesa: round(b.costoAttesa ?? 0),
+      costoDeviazione: round(b.costoDeviazione),
+      extraVeicolo: round(b.extraVeicolo),
+      totalPrice: newTotal,
+    },
+  };
+}
+
+function normalizeStops(body: CalculatePayload): TripStopInput[] {
+  if (Array.isArray(body.stops) && body.stops.length > 0) {
+    const normalized: TripStopInput[] = [];
+    for (const raw of body.stops) {
+      const kind = raw.kind === "custom" ? "custom" : "catalog";
+      const id = (raw.id ?? raw.poiId ?? "").trim();
+      if (!id) {
+        continue;
+      }
+      normalized.push({
+        kind,
+        id,
+        label: (raw.label ?? "").trim() || id,
+        address: raw.address?.trim(),
+        durationMinutes: Math.max(15, Math.min(480, Number(raw.durationMinutes) || 60)),
+        lat: typeof raw.lat === "number" ? raw.lat : undefined,
+        lng: typeof raw.lng === "number" ? raw.lng : undefined,
+      });
+    }
+    return normalized;
+  }
+
+  if (Array.isArray(body.stopIds)) {
+    return body.stopIds
+      .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+      .map((id) => ({
+        kind: "catalog" as const,
+        id,
+        label: id,
+        durationMinutes: 60,
+      }));
+  }
+
+  return [];
 }
 
 export async function POST(request: Request) {
+  const rateLimited = enforceApiRateLimit(request, "calculate", "success");
+  if (rateLimited) {
+    return rateLimited;
+  }
+
   try {
     let body: CalculatePayload;
     try {
@@ -28,9 +118,8 @@ export async function POST(request: Request) {
 
     const origin = body.origin?.trim() ?? "";
     const destination = body.destination?.trim() ?? "";
-    const stopIds = Array.isArray(body.stops)
-      ? body.stops.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
-      : [];
+    const pickupTime = body.pickupTime?.trim() ?? "10:00";
+    const stops = normalizeStops(body);
 
     if (!origin || !destination) {
       return jsonError("Partenza e destinazione sono obbligatorie.", 400);
@@ -40,7 +129,8 @@ export async function POST(request: Request) {
     const result = await computeTripQuotesAllVehicles(supabase, {
       origin,
       destination,
-      stopIds,
+      pickupTime,
+      stops,
     });
 
     if (!result.ok) {
@@ -51,7 +141,22 @@ export async function POST(request: Request) {
     }
 
     const { data } = result;
+    const noRushVip = body.noRushVip === true;
+    const comfortConfig = await loadComfortModeConfig();
+    const markupPercent = noRushVip ? comfortConfig.noRushVip.markupPercent : 0;
+
+    let byVehicle = data.byVehicle;
+    if (markupPercent > 0) {
+      byVehicle = Object.fromEntries(
+        VEHICLE_ORDER.map((vt) => [
+          vt,
+          scaleQuoteForNoRush(byVehicle[vt], markupPercent),
+        ])
+      ) as typeof byVehicle;
+    }
+
     const durationSec = Math.round(data.durationMinutesEstimate * 60);
+    const stopIds = stops.filter((s) => s.kind === "catalog").map((s) => s.id);
 
     let idsByVehicle: Record<TripVehicleType, string> | null = null;
     let persisted = false;
@@ -63,7 +168,7 @@ export async function POST(request: Request) {
         distance_km: data.distanceKm,
         duration_sec: durationSec,
         selected_pois: stopIds,
-        total_price: data.byVehicle[vehicleType].totalPrice,
+        total_price: byVehicle[vehicleType].totalPrice,
         vehicle_type: vehicleType,
         currency: data.currency,
       }));
@@ -77,7 +182,7 @@ export async function POST(request: Request) {
 
     const quotes = Object.fromEntries(
       VEHICLE_ORDER.map((vt) => {
-        const slice = data.byVehicle[vt];
+        const slice = byVehicle[vt];
         return [
           vt,
           {
@@ -99,6 +204,11 @@ export async function POST(request: Request) {
         distanceKm: data.distanceKm,
         durationMinutesEstimate: data.durationMinutesEstimate,
         pricingRule: data.pricingRule,
+        waitTimeBand: data.waitTimeBand,
+        stopsSnapshot: data.stopsSnapshot,
+        totalStopDurationMinutes: data.totalStopDurationMinutes,
+        noRushVip,
+        noRushMarkupPercent: markupPercent > 0 ? markupPercent : undefined,
         quotes,
         persisted,
       },

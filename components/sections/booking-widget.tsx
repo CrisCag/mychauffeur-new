@@ -1,9 +1,10 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CarFront, Sparkles, Van } from "lucide-react";
+import { CarFront, ShieldCheck, Sparkles, Van } from "lucide-react";
 import { useCookieConsent } from "@/components/gdpr/cookie-consent-context";
+import { AddressAutocomplete } from "@/components/booking/address-autocomplete";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,20 +27,6 @@ import { DatePickerField } from "@/components/booking/date-picker-field";
 import { TimePickerField } from "@/components/booking/time-picker-field";
 import type { Messages } from "@/messages/types";
 
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: new (input: HTMLInputElement) => unknown;
-        };
-      };
-    };
-  }
-}
-
-const GOOGLE_SCRIPT_ID = "google-maps-places-script";
-
 export function BookingWidget({
   className,
   dict,
@@ -57,6 +44,7 @@ export function BookingWidget({
   const [rideDate, setRideDate] = useState("");
   const [rideTime, setRideTime] = useState("");
   const [addReturn, setAddReturn] = useState(false);
+  const [noRushVip, setNoRushVip] = useState(false);
   const [returnDate, setReturnDate] = useState("");
   const [returnTime, setReturnTime] = useState("");
   const [passengers, setPassengers] = useState("");
@@ -70,6 +58,7 @@ export function BookingWidget({
     "idle"
   );
   const [submitError, setSubmitError] = useState("");
+  const [honeypotWebsite, setHoneypotWebsite] = useState("");
   const vehicleOptions = [
     {
       key: "sedan" as const,
@@ -88,36 +77,6 @@ export function BookingWidget({
     },
   ];
 
-  useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey || !mapsAllowed) return;
-
-    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
-    if (!existingScript) {
-      const script = document.createElement("script");
-      script.id = GOOGLE_SCRIPT_ID;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-      script.async = true;
-      document.body.appendChild(script);
-    }
-
-    const setupAutocomplete = () => {
-      const fromInput = document.getElementById("pickup-location");
-      const toInput = document.getElementById("dropoff-location");
-      if (
-        fromInput instanceof HTMLInputElement &&
-        toInput instanceof HTMLInputElement &&
-        window.google?.maps?.places?.Autocomplete
-      ) {
-        new window.google.maps.places.Autocomplete(fromInput);
-        new window.google.maps.places.Autocomplete(toInput);
-      }
-    };
-
-    const timeout = setTimeout(setupAutocomplete, 800);
-    return () => clearTimeout(timeout);
-  }, [mapsAllowed]);
-
   const showDevKeyHint =
     process.env.NODE_ENV === "development" &&
     !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -130,11 +89,22 @@ export function BookingWidget({
   const locale = pathname?.split("/")[1] ?? "it";
   const minRideDate = new Date().toISOString().slice(0, 10);
 
-  async function fetchQuote(origin: string, destination: string): Promise<CalculateApiResponse> {
+  async function fetchQuote(
+    origin: string,
+    destination: string,
+    pickupTime: string,
+    withNoRushVip: boolean
+  ): Promise<CalculateApiResponse> {
     const calcRes = await fetch("/api/trips/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ origin, destination, stops: [] }),
+      body: JSON.stringify({
+        origin,
+        destination,
+        pickupTime,
+        stops: [],
+        noRushVip: withNoRushVip,
+      }),
     });
     const calcPayload = (await calcRes.json()) as CalculateApiResponse;
     if (!calcRes.ok || !calcPayload.success || !calcPayload.quotes) {
@@ -174,6 +144,7 @@ export function BookingWidget({
               vehicleType === "other" ? vehicleOtherDetails.trim() : undefined,
             locale,
             inquiryType: "b2b",
+            _hpWebsite: honeypotWebsite,
           }),
         });
         if (!res.ok) {
@@ -203,14 +174,14 @@ export function BookingWidget({
         }
       }
 
-      const outbound = await fetchQuote(pickupLocation, dropoffLocation);
+      const outbound = await fetchQuote(pickupLocation, dropoffLocation, rideTime, noRushVip);
       let quotes = outbound.quotes!;
       let distanceKm = outbound.distanceKm ?? 0;
       let durationMinutesEstimate = outbound.durationMinutesEstimate ?? 0;
       let provider = outbound.provider ?? "simulated";
 
       if (addReturn) {
-        const returnLeg = await fetchQuote(dropoffLocation, pickupLocation);
+        const returnLeg = await fetchQuote(dropoffLocation, pickupLocation, returnTime, noRushVip);
         quotes = mergeRoundTripQuotes(quotes, returnLeg.quotes!);
         distanceKm += returnLeg.distanceKm ?? 0;
         durationMinutesEstimate += returnLeg.durationMinutesEstimate ?? 0;
@@ -220,11 +191,11 @@ export function BookingWidget({
       }
 
       const passengersNum = Math.max(1, Number(passengers) || 1);
-      const preferredVehicle =
-        vehicleType === "van" ? "van" : vehicleType === "other" ? "luxury" : "sedan";
 
       saveBookingFlowSnapshot({
         version: 1,
+        bookStep: 1,
+        noRushVip,
         pickup: pickupLocation.trim(),
         destination: dropoffLocation.trim(),
         travelDate: rideDate,
@@ -236,7 +207,8 @@ export function BookingWidget({
         returnDate: addReturn ? returnDate : "",
         returnTime: addReturn ? returnTime : "",
         selectedPoiIds: [],
-        selectedVehicle: preferredVehicle,
+        tripStops: [],
+        selectedVehicle: null,
         currency: outbound.currency ?? "EUR",
         provider,
         distanceKm,
@@ -271,6 +243,20 @@ export function BookingWidget({
       </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={onSubmit}>
+        <div
+          className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <label htmlFor="widget-hp-website">Website</label>
+          <input
+            id="widget-hp-website"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypotWebsite}
+            onChange={(e) => setHoneypotWebsite(e.target.value)}
+          />
+        </div>
         {showConsentMapsHint ? (
           <p className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
             {b.mapsBlockedHint}
@@ -278,26 +264,24 @@ export function BookingWidget({
         ) : null}
         <div className="grid gap-2">
           <Label htmlFor="pickup-location">{b.labelFrom}</Label>
-          <Input
+          <AddressAutocomplete
             id="pickup-location"
             placeholder={b.placeholderFrom}
-            className="h-10 md:h-11"
-            autoComplete="street-address"
             required
             value={pickupLocation}
-            onChange={(event) => setPickupLocation(event.target.value)}
+            onChange={setPickupLocation}
+            locale={locale}
           />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="dropoff-location">{b.labelTo}</Label>
-          <Input
+          <AddressAutocomplete
             id="dropoff-location"
             placeholder={b.placeholderTo}
-            className="h-10 md:h-11"
-            autoComplete="street-address"
             required
             value={dropoffLocation}
-            onChange={(event) => setDropoffLocation(event.target.value)}
+            onChange={setDropoffLocation}
+            locale={locale}
           />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-start">
@@ -369,6 +353,22 @@ export function BookingWidget({
             </div>
           </div>
         ) : null}
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+          <label className="flex items-start gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={noRushVip}
+              onChange={(event) => setNoRushVip(event.target.checked)}
+            />
+            <span>
+              <span className="font-medium text-foreground">{b.labelNoRushVip}</span>
+              <span className="mt-1 block text-xs leading-relaxed">
+                {b.noRushVipHint.replace("{percent}", "18")}
+              </span>
+            </span>
+          </label>
+        </div>
         <div className="grid gap-2">
           <Label htmlFor="ride-passengers">{b.labelPassengers}</Label>
           <Input
@@ -458,6 +458,10 @@ export function BookingWidget({
         {isSubmitting ? (
           <p className="text-center text-xs text-muted-foreground">{b.calculating ?? b.sending}</p>
         ) : null}
+        <p className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
+          <ShieldCheck className="size-3.5 shrink-0 text-primary" aria-hidden />
+          {b.trustCancelFree}
+        </p>
         </form>
       </CardContent>
       {showDevKeyHint ? (
