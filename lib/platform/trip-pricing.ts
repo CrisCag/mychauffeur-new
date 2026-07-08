@@ -1,22 +1,31 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchPoiStopsByIds } from "@/lib/platform/poi-query";
+import { getStaticPoiByIds } from "@/lib/platform/static-pois";
+import { resolvePoiStopsByIds } from "@/lib/platform/poi-query";
 import {
   isGeoFenceEnabled,
   isWithinItaly,
   resolveLatLngForPricing,
 } from "@/lib/platform/pricing-engine";
 import { QUOTE_ERROR_OUT_OF_AREA } from "@/lib/platform/quote-errors";
+import {
+  computeStopWaitCost,
+  getWaitTimeBand,
+  loadWaitTimeRatesConfig,
+  type WaitTimeBand,
+} from "@/lib/platform/wait-time-pricing";
 import { VEHICLE_MULTIPLIERS } from "@/lib/platform/vehicle-pricing-multipliers";
-import type { TripVehicleType } from "@/types/trip";
+import type { TripStopInput, TripVehicleType } from "@/types/trip";
 
 export type TripStopSnapshot = {
   id: string;
+  kind: "catalog" | "custom";
   name: string;
+  address: string;
   lat: number;
   lng: number;
   base_stop_price: number;
-  deviation_time_minutes: number;
-  suggested_duration_minutes: number;
+  duration_minutes: number;
+  wait_cost_by_vehicle: Record<TripVehicleType, number>;
 };
 
 type PricingRuleRow = {
@@ -175,10 +184,12 @@ async function getRouteMetrics(
 export type PerVehicleQuoteSlice = {
   vehicleType: TripVehicleType;
   vehicleMultiplier: number;
+  waitTimeBand: WaitTimeBand;
   breakdown: {
     costoBase: number;
     costoKm: number;
     costoSoste: number;
+    costoAttesa: number;
     costoDeviazione: number;
     extraVeicolo: number;
     totalPrice: number;
@@ -192,6 +203,7 @@ export type ComputeTripQuotesAllSuccess = {
   distanceKm: number;
   durationMinutesEstimate: number;
   pricingRule: { id: string; name: string };
+  waitTimeBand: WaitTimeBand;
   stopsSnapshot: TripStopSnapshot[];
   totalStopDurationMinutes: number;
   byVehicle: Record<TripVehicleType, PerVehicleQuoteSlice>;
@@ -204,7 +216,8 @@ export type ComputeTripQuotesAllResult =
 export type ComputeTripQuotesAllInput = {
   origin: string;
   destination: string;
-  stopIds: string[];
+  pickupTime: string;
+  stops: TripStopInput[];
 };
 
 const ALL_VEHICLE_TYPES: TripVehicleType[] = ["sedan", "van", "luxury"];
@@ -231,13 +244,130 @@ async function loadPricingRule(
   return pricingRuleRow;
 }
 
+type ResolvedStop = {
+  id: string;
+  kind: "catalog" | "custom";
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  base_stop_price: number;
+  duration_minutes: number;
+};
+
+async function resolveTripStops(
+  supabase: SupabaseClient | null,
+  stops: TripStopInput[],
+  pricingRule: PricingRuleRow
+): Promise<{ ok: true; data: ResolvedStop[] } | { ok: false; error: string }> {
+  if (stops.length === 0) {
+    return { ok: true, data: [] };
+  }
+
+  const catalogIds = stops.filter((s) => s.kind === "catalog").map((s) => s.id);
+  const catalogById = new Map<string, PointOfInterestRow>();
+
+  if (catalogIds.length > 0) {
+    const { data: poiRows, error: poiError } = await resolvePoiStopsByIds(supabase, catalogIds);
+    if (poiError) {
+      return { ok: false, error: `Errore recupero fermate: ${poiError.message}` };
+    }
+    for (const row of poiRows as PointOfInterestRow[]) {
+      catalogById.set(row.id, row);
+    }
+    const staticFallback = getStaticPoiByIds(
+      catalogIds.filter((id) => !catalogById.has(id))
+    );
+    for (const row of staticFallback) {
+      catalogById.set(row.id, row);
+    }
+  }
+
+  const resolved: ResolvedStop[] = [];
+
+  for (const stop of stops) {
+    const duration = Math.max(15, Math.min(480, Math.round(stop.durationMinutes)));
+
+    if (stop.kind === "catalog") {
+      const poi = catalogById.get(stop.id);
+      if (!poi) {
+        return { ok: false, error: `Fermata «${stop.label || stop.id}» non valida.` };
+      }
+      resolved.push({
+        id: poi.id,
+        kind: "catalog",
+        name: stop.label || poi.name,
+        address: stop.address ?? poi.name,
+        lat: poi.lat,
+        lng: poi.lng,
+        base_stop_price: Number(poi.base_stop_price ?? pricingRule.stop_fee),
+        duration_minutes: duration,
+      });
+      continue;
+    }
+
+    const address = (stop.address ?? stop.label).trim();
+    if (!address) {
+      return { ok: false, error: "Indicate un indirizzo per la fermata personalizzata." };
+    }
+
+    let lat = stop.lat;
+    let lng = stop.lng;
+    if (lat == null || lng == null) {
+      const coords = await resolveLatLngForPricing(address);
+      if (!coords) {
+        return {
+          ok: false,
+          error: `Impossibile geolocalizzare la fermata: «${address}». Verificate l'indirizzo.`,
+        };
+      }
+      lat = coords.lat;
+      lng = coords.lng;
+    }
+
+    if (isGeoFenceEnabled() && !isWithinItaly(lat, lng)) {
+      return { ok: false, error: QUOTE_ERROR_OUT_OF_AREA };
+    }
+
+    resolved.push({
+      id: stop.id,
+      kind: "custom",
+      name: stop.label.trim() || "Fermata personalizzata",
+      address,
+      lat,
+      lng,
+      base_stop_price: 0,
+      duration_minutes: duration,
+    });
+  }
+
+  return { ok: true, data: resolved };
+}
+
+/** Converte vecchio payload `stops: string[]` in TripStopInput[]. */
+export function legacyStopIdsToInputs(
+  stopIds: string[],
+  catalogDefaults: Map<string, { label: string; durationMinutes: number }>
+): TripStopInput[] {
+  return stopIds.map((id) => {
+    const defaults = catalogDefaults.get(id);
+    return {
+      kind: "catalog",
+      id,
+      label: defaults?.label ?? id,
+      durationMinutes: defaults?.durationMinutes ?? 60,
+    };
+  });
+}
+
 export async function computeTripQuotesAllVehicles(
   supabase: SupabaseClient | null,
   input: ComputeTripQuotesAllInput
 ): Promise<ComputeTripQuotesAllResult> {
   const origin = input.origin.trim();
   const destination = input.destination.trim();
-  const stopIds = input.stopIds.filter((id) => id.trim().length > 0);
+  const pickupTime = input.pickupTime.trim() || "10:00";
+  const stopsInput = input.stops ?? [];
 
   if (!origin || !destination) {
     return { ok: false, error: "Indicate partenza e arrivo per continuare." };
@@ -256,27 +386,17 @@ export async function computeTripQuotesAllVehicles(
     }
   }
 
-  const pricingRule = await loadPricingRule(supabase);
+  const [pricingRule, waitConfig] = await Promise.all([
+    loadPricingRule(supabase),
+    loadWaitTimeRatesConfig(),
+  ]);
 
-  let selectedStops: PointOfInterestRow[] = [];
-  if (stopIds.length > 0) {
-    if (!supabase) {
-      return {
-        ok: false,
-        error: "Fermate turistiche disponibili dopo attivazione database.",
-      };
-    }
-
-    const { data: poiRows, error: poiError } = await fetchPoiStopsByIds(supabase, stopIds);
-    if (poiError) {
-      return { ok: false, error: `Errore recupero fermate: ${poiError.message}` };
-    }
-
-    selectedStops = poiRows as PointOfInterestRow[];
-    if (selectedStops.length !== stopIds.length) {
-      return { ok: false, error: "Una o più fermate selezionate non sono valide." };
-    }
+  const resolvedStops = await resolveTripStops(supabase, stopsInput, pricingRule);
+  if (!resolvedStops.ok) {
+    return { ok: false, error: resolvedStops.error };
   }
+
+  const selectedStops = resolvedStops.data;
 
   const routePoints = [
     origin,
@@ -293,32 +413,36 @@ export async function computeTripQuotesAllVehicles(
 
   const basePrice = Number(pricingRule.base_fare);
   const kmPrice = distanceKm * Number(pricingRule.price_per_km);
-  const stopPrice =
-    selectedStops.length > 0
-      ? selectedStops.reduce(
-          (total, stop) => total + Number(stop.base_stop_price ?? pricingRule.stop_fee),
-          0
-        )
-      : 0;
-  const totalDeviationMinutes = selectedStops.reduce(
-    (total, stop) => total + Number(stop.deviation_time_minutes ?? 0),
-    0
-  );
-  const deviationExtra = totalDeviationMinutes * Number(pricingRule.wait_fee_per_minute);
-  const subtotal = basePrice + kmPrice + stopPrice + deviationExtra;
+  const catalogStopFees = selectedStops.reduce((total, stop) => total + stop.base_stop_price, 0);
+  const transportSubtotal = basePrice + kmPrice + catalogStopFees;
 
-  const stopsSnapshot: TripStopSnapshot[] = selectedStops.map((stop) => ({
-    id: stop.id,
-    name: stop.name,
-    lat: stop.lat,
-    lng: stop.lng,
-    base_stop_price: Number(stop.base_stop_price ?? 0),
-    deviation_time_minutes: Number(stop.deviation_time_minutes ?? 0),
-    suggested_duration_minutes: Number(stop.suggested_duration_minutes ?? 0),
-  }));
+  const waitTimeBand = getWaitTimeBand(pickupTime);
+
+  const stopsSnapshot: TripStopSnapshot[] = selectedStops.map((stop) => {
+    const wait_cost_by_vehicle = {} as Record<TripVehicleType, number>;
+    for (const vt of ALL_VEHICLE_TYPES) {
+      wait_cost_by_vehicle[vt] = computeStopWaitCost(
+        waitConfig,
+        vt,
+        pickupTime,
+        stop.duration_minutes
+      ).cost;
+    }
+    return {
+      id: stop.id,
+      kind: stop.kind,
+      name: stop.name,
+      address: stop.address,
+      lat: stop.lat,
+      lng: stop.lng,
+      base_stop_price: stop.base_stop_price,
+      duration_minutes: stop.duration_minutes,
+      wait_cost_by_vehicle,
+    };
+  });
 
   const totalStopDurationMinutes = stopsSnapshot.reduce(
-    (sum, s) => sum + s.suggested_duration_minutes,
+    (sum, s) => sum + s.duration_minutes,
     0
   );
 
@@ -332,16 +456,23 @@ export async function computeTripQuotesAllVehicles(
 
   for (const vehicleType of ALL_VEHICLE_TYPES) {
     const vehicleMultiplier = VEHICLE_MULTIPLIERS[vehicleType];
-    const vehicleSurcharge = subtotal * (vehicleMultiplier - 1);
-    const finalPrice = subtotal + vehicleSurcharge;
+    const waitCost = stopsSnapshot.reduce(
+      (sum, s) => sum + s.wait_cost_by_vehicle[vehicleType],
+      0
+    );
+    const vehicleSurcharge = transportSubtotal * (vehicleMultiplier - 1);
+    const finalPrice = transportSubtotal + waitCost + vehicleSurcharge;
+
     byVehicle[vehicleType] = {
       vehicleType,
       vehicleMultiplier,
+      waitTimeBand,
       breakdown: {
         costoBase: roundCurrency(basePrice),
         costoKm: roundCurrency(kmPrice),
-        costoSoste: roundCurrency(stopPrice),
-        costoDeviazione: roundCurrency(deviationExtra),
+        costoSoste: roundCurrency(catalogStopFees),
+        costoAttesa: roundCurrency(waitCost),
+        costoDeviazione: 0,
         extraVeicolo: roundCurrency(vehicleSurcharge),
         totalPrice: roundCurrency(finalPrice),
       },
@@ -360,6 +491,7 @@ export async function computeTripQuotesAllVehicles(
         id: pricingRule.id,
         name: pricingRule.name,
       },
+      waitTimeBand,
       stopsSnapshot,
       totalStopDurationMinutes,
       byVehicle,

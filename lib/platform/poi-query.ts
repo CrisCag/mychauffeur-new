@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getStaticPoiByIds } from "@/lib/platform/static-pois";
 
 export type PoiStopRow = {
   id: string;
@@ -41,4 +42,27 @@ export async function fetchPoiStopsByIds(
   }));
 
   return { data: normalized, error: null };
+}
+
+export async function resolvePoiStopsByIds(
+  supabase: SupabaseClient | null,
+  stopIds: string[]
+): Promise<{ data: PoiStopRow[]; error: Error | null }> {
+  if (stopIds.length === 0) {
+    return { data: [], error: null };
+  }
+
+  if (supabase) {
+    const fromDb = await fetchPoiStopsByIds(supabase, stopIds);
+    if (!fromDb.error && fromDb.data.length === stopIds.length) {
+      return fromDb;
+    }
+  }
+
+  const staticRows = getStaticPoiByIds(stopIds);
+  if (staticRows.length !== stopIds.length) {
+    return { data: [], error: new Error("Una o più fermate non sono valide.") };
+  }
+
+  return { data: staticRows, error: null };
 }

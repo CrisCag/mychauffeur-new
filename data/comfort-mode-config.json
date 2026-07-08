@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "noRushVip": {
+    "code": "no_rush_vip",
+    "labelIt": "No Rush · VIP Max Comfort",
+    "labelEn": "No Rush · VIP Max Comfort",
+    "descriptionIt": "Senza fretta: più tempo alle fermate, tolleranza 20% anche dopo extra in app, veicolo a disposizione.",
+    "descriptionEn": "Unhurried travel: more time at stops, 20% grace even after in-app extensions, vehicle at your disposal.",
+    "markupPercent": 18,
+    "vipStopGraceAfterExtra": true
+  },
+  "standard": {
+    "gracePercentOnBookedOnly": 20,
+    "gracePercentAfterExtraInApp": 0,
+    "stopMaxExtraPurchaseMinutes": 120,
+    "stopExtraPurchaseOptionsMinutes": [15, 30, 45, 60]
+  }
+}

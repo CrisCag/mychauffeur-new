@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "currency": "EUR",
+  "durationOptionsMinutes": [15, 30, 45, 60, 90, 120, 180, 240, 360, 480],
+  "maxDurationMinutes": 480,
+  "minDurationMinutes": 15,
+  "bands": {
+    "day": { "labelIt": "06:00 – 20:00", "labelEn": "6:00 AM – 8:00 PM", "startHour": 6, "endHour": 20 },
+    "evening": { "labelIt": "20:00 – 22:00", "labelEn": "8:00 PM – 10:00 PM", "startHour": 20, "endHour": 22 },
+    "night": { "labelIt": "22:00 – 06:00", "labelEn": "10:00 PM – 6:00 AM", "startHour": 22, "endHour": 6 }
+  },
+  "ratesPerMinute": {
+    "day": { "sedan": 0.8, "van": 1.0, "luxury": 1.5 },
+    "evening": { "sedan": 1.0, "van": 1.2, "luxury": 1.8 },
+    "night": { "sedan": 1.2, "van": 1.5, "luxury": 2.2 }
+  }
+}
