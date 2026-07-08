@@ -1,3 +1,4 @@
+import { DaytripPillarsSection } from "@/components/sections/daytrip-pillars-section";
 import { CtaSection } from "@/components/sections/cta-section";
 import { FleetSection } from "@/components/sections/fleet-section";
 import { HeroSection } from "@/components/sections/hero-section";
@@ -46,6 +47,7 @@ export default async function HomePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
       <HeroSection dict={dict} />
+      <DaytripPillarsSection dict={dict} />
       <ServicesSection locale={locale} dict={dict} />
       <HubsSection dict={dict} />
       <FleetSection dict={dict} />
