@@ -5,7 +5,7 @@ import { TripRouteMap } from "@/components/booking/trip-route-map";
 import type { BookingFlowSnapshotV1 } from "@/lib/booking-flow-storage";
 import type { TripStopInput, TripVehicleType } from "@/types/trip";
 
-function formatDuration(totalMin: number, locale: string): string {
+function formatDuration(totalMin: number): string {
   const m = Math.max(0, Math.round(totalMin));
   const h = Math.floor(m / 60);
   const min = m % 60;
@@ -99,7 +99,7 @@ export function BookingSummaryPanel({
           <div className="col-span-2">
             <dt className="text-muted-foreground">{isEn ? "Drive time" : "Tempo di guida"}</dt>
             <dd className="font-medium">
-              ~{formatDuration(snapshot.durationMinutesEstimate, locale)}
+              ~{formatDuration(snapshot.durationMinutesEstimate)}
               {recalculating ? (isEn ? " · updating…" : " · aggiornamento…") : ""}
             </dd>
           </div>
@@ -113,7 +113,7 @@ export function BookingSummaryPanel({
             <ul className="mt-1 space-y-1 text-xs">
               {tripStops.map((stop, i) => (
                 <li key={stop.id} className="truncate text-foreground/90">
-                  {i + 1}. {stop.label} · {formatDuration(stop.durationMinutes, locale)}
+                  {i + 1}. {stop.label} · {formatDuration(stop.durationMinutes)}
                 </li>
               ))}
             </ul>

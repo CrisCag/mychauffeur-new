@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock3 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -55,35 +55,18 @@ export function TimePickerField({
 }: TimePickerFieldProps) {
   const isEn = locale === "en";
   const minutes = useMemo(() => buildMinutes(minuteStep), [minuteStep]);
-  const [hour, setHour] = useState("");
-  const [minute, setMinute] = useState("");
-
-  useEffect(() => {
-    const parsed = parseTime(value);
-    setHour(parsed.hour);
-    setMinute(parsed.minute);
-  }, [value]);
-
-  function emit(nextHour: string, nextMinute: string) {
-    onChange(formatTime(nextHour, nextMinute));
-  }
+  const { hour, minute } = parseTime(value);
 
   function onHourChange(nextHour: string) {
-    setHour(nextHour);
     if (!nextHour) {
-      setMinute("");
       onChange("");
       return;
     }
     const nextMinute = minute || "00";
-    if (!minute) {
-      setMinute("00");
-    }
-    emit(nextHour, nextMinute);
+    onChange(formatTime(nextHour, nextMinute));
   }
 
   function onMinuteChange(nextMinute: string) {
-    setMinute(nextMinute);
     if (!nextMinute) {
       onChange("");
       return;
@@ -91,7 +74,7 @@ export function TimePickerField({
     if (!hour) {
       return;
     }
-    emit(hour, nextMinute);
+    onChange(formatTime(hour, nextMinute));
   }
 
   const complete = Boolean(hour && minute);

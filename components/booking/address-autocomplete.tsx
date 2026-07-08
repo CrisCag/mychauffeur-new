@@ -111,8 +111,6 @@ export function AddressAutocomplete({
 
   useEffect(() => {
     if (!autocompleteEnabled) {
-      setSuggestions([]);
-      setOpen(false);
       return;
     }
 

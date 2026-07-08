@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { canLoadThirdPartyMaps } from "@/lib/cookie-consent";
 import {
   mergeRoundTripQuotes,
   saveBookingFlowSnapshot,
@@ -38,7 +37,6 @@ export function BookingWidget({
   const pathname = usePathname();
   const router = useRouter();
   const { ready, consent } = useCookieConsent();
-  const mapsAllowed = ready && canLoadThirdPartyMaps(consent);
   const [pickupLocation, setPickupLocation] = useState("");
   const [dropoffLocation, setDropoffLocation] = useState("");
   const [rideDate, setRideDate] = useState("");
