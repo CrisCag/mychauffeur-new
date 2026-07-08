@@ -36,6 +36,8 @@ export const en: Messages = {
     labelDate: "Date",
     labelTime: "Time",
     labelAddReturn: "Add return trip",
+    labelNoRushVip: "No Rush · VIP Max Comfort",
+    noRushVipHint: "Unhurried stops · 20% grace even after in-app extensions · +{percent}% on transfer",
     labelReturnDate: "Return date",
     labelReturnTime: "Return time",
     placeholderDate: "Pick a date",
@@ -71,6 +73,68 @@ export const en: Messages = {
     devHintAfter: "for address autocomplete.",
     mapsBlockedHint:
       "To enable Google Maps address suggestions, accept functional cookies in the banner below or via “Cookie preferences” in the footer.",
+    trustCancelFree: "Free cancellation up to 24 hours before departure",
+  },
+  daytripPillars: {
+    kicker: "Why MyChauffeur",
+    title: "Private transfers with the Daytrip philosophy",
+    items: [
+      {
+        title: "Optional sightseeing stops",
+        description:
+          "Add scenic stops along the route — villages, UNESCO sites, viewpoints — without the stress of driving.",
+      },
+      {
+        title: "Professional chauffeurs",
+        description:
+          "Selected NCC drivers, punctual and discreet, with luggage assistance and premium meet & greet.",
+      },
+      {
+        title: "Comfortable vehicles",
+        description:
+          "Sedan, van or luxury Mercedes: climate control, space and curated amenities for every need.",
+      },
+      {
+        title: "Door-to-door",
+        description:
+          "Pickup and drop-off where you choose: hotel, airport, port, station or private address.",
+      },
+    ],
+  },
+  bookFlow: {
+    stepStops: "Route",
+    stepVehicle: "Vehicle",
+    stepContact: "Checkout",
+    stopsTitle: "Add stops along your route",
+    stopsLead:
+      "Optional, Daytrip-style: add as many stops as you like (up to 10). The price updates automatically.",
+    routeEditTitle: "Pickup and destination",
+    routeEditLead:
+      "Change addresses if needed — the map and price will update automatically.",
+    updateRoute: "Update route",
+    skipStops: "Skip — no stops",
+    continue: "Continue",
+    recalculating: "Updating price…",
+    poiPrice: "from +€{price} · ~{min} min",
+    noPois:
+      "No suggested stops for this route. You can add a custom stop below.",
+    customStopTitle: "Custom stop",
+    customStopLead:
+      "Hotel, restaurant, archaeological site or any address — tell us where you want to stop.",
+    customStopLabel: "Place name (optional)",
+    customStopLabelPlaceholder: "e.g. Hotel Brunelleschi",
+    customStopAddress: "Address or location",
+    customStopAddressPlaceholder: "e.g. Piazza del Duomo 1, Florence",
+    customStopDuration: "Desired stop duration",
+    addCustomStop: "Add stop",
+    removeStop: "Remove",
+    maxStopsError: "Maximum 10 stops per route.",
+    mapHint: "The route map will appear here once origin and destination are set.",
+    mapConsentHint: "Accept functional cookies for the interactive Google map.",
+    waitBandNote: "Waiting rate based on departure time band ({band}).",
+    durationUpdated: "Stop duration",
+    vehicleTitle: "Choose your vehicle",
+    back: "Back",
   },
   servicesSection: {
     kicker: "Services",

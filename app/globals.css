@@ -149,3 +149,36 @@
     padding: 0;
   }
 }
+
+/* Dropdown suggerimenti Google Places sopra card e modali */
+.pac-container {
+  z-index: 10000 !important;
+}
+
+/* Widget Places API (New) — stile allineato agli input del sito */
+.address-autocomplete-wrap {
+  display: block;
+  width: 100%;
+}
+
+.address-autocomplete-host {
+  display: block;
+  width: 100%;
+}
+
+.address-autocomplete-host gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+  min-height: 2.5rem;
+  color-scheme: dark;
+  --gmp-mat-color-surface: var(--card);
+  --gmp-mat-color-on-surface: var(--foreground);
+  --gmp-mat-color-on-surface-variant: var(--muted-foreground);
+  --gmp-mat-color-primary: var(--primary);
+  --gmp-mat-color-outline-decorative: var(--border);
+}
+
+.address-autocomplete-host[data-disabled="true"] gmp-place-autocomplete {
+  opacity: 0.5;
+  pointer-events: none;
+}

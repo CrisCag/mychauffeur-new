@@ -45,6 +45,8 @@ export type Messages = {
     labelDate: string;
     labelTime: string;
     labelAddReturn: string;
+    labelNoRushVip: string;
+    noRushVipHint: string;
     labelReturnDate: string;
     labelReturnTime: string;
     placeholderDate: string;
@@ -74,6 +76,43 @@ export type Messages = {
     devHintBefore: string;
     devHintAfter: string;
     mapsBlockedHint: string;
+    trustCancelFree: string;
+  };
+  daytripPillars: {
+    kicker: string;
+    title: string;
+    items: { title: string; description: string }[];
+  };
+  bookFlow: {
+    stepStops: string;
+    stepVehicle: string;
+    stepContact: string;
+    stopsTitle: string;
+    stopsLead: string;
+    routeEditTitle: string;
+    routeEditLead: string;
+    updateRoute: string;
+    skipStops: string;
+    continue: string;
+    recalculating: string;
+    poiPrice: string;
+    noPois: string;
+    customStopTitle: string;
+    customStopLead: string;
+    customStopLabel: string;
+    customStopLabelPlaceholder: string;
+    customStopAddress: string;
+    customStopAddressPlaceholder: string;
+    customStopDuration: string;
+    addCustomStop: string;
+    removeStop: string;
+    maxStopsError: string;
+    mapHint: string;
+    mapConsentHint: string;
+    waitBandNote: string;
+    durationUpdated: string;
+    vehicleTitle: string;
+    back: string;
   };
   servicesSection: {
     kicker: string;

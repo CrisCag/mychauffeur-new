@@ -1,4 +1,4 @@
-import type { QuoteBreakdown, TripVehicleType, VehicleQuote } from "@/types/trip";
+import type { QuoteBreakdown, TripStopInput, TripVehicleType, VehicleQuote } from "@/types/trip";
 
 export type BookingFlowSnapshotV1 = {
   version: 1;
@@ -12,7 +12,11 @@ export type BookingFlowSnapshotV1 = {
   addReturn: boolean;
   returnDate: string;
   returnTime: string;
-  selectedPoiIds: string[];
+  bookStep: 1 | 2 | 3;
+  noRushVip: boolean;
+  /** @deprecated use tripStops */
+  selectedPoiIds?: string[];
+  tripStops: TripStopInput[];
   selectedVehicle: TripVehicleType | null;
   currency: string;
   provider: "google" | "simulated";
@@ -110,6 +114,7 @@ export function mergeRoundTripQuotes(
         costoBase: o.breakdown.costoBase + r.breakdown.costoBase,
         costoKm: o.breakdown.costoKm + r.breakdown.costoKm,
         costoSoste: o.breakdown.costoSoste + r.breakdown.costoSoste,
+        costoAttesa: o.breakdown.costoAttesa + r.breakdown.costoAttesa,
         costoDeviazione: o.breakdown.costoDeviazione + r.breakdown.costoDeviazione,
         extraVeicolo: o.breakdown.extraVeicolo + r.breakdown.extraVeicolo,
         totalPrice: Math.round((o.totalPrice + r.totalPrice) * 100) / 100,
