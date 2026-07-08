@@ -93,6 +93,23 @@ function stopSummary(stops: TripStopInput[]): string {
   return stops.map((s) => `${s.label} (${s.durationMinutes} min)`).join("; ");
 }
 
+function loadInitialBookingState(): {
+  snapshot: BookingFlowSnapshotV1 | null;
+  routePickup: string;
+  routeDestination: string;
+} {
+  const raw = loadBookingFlowSnapshot();
+  if (!raw?.quotes?.sedan) {
+    return { snapshot: null, routePickup: "", routeDestination: "" };
+  }
+  const snapshot = normalizeSnapshot(raw);
+  return {
+    snapshot,
+    routePickup: snapshot.pickup,
+    routeDestination: snapshot.destination,
+  };
+}
+
 export function BookFlowClient({
   locale,
   dict,
@@ -108,7 +125,10 @@ export function BookFlowClient({
   const hasMapsKey = Boolean(getGoogleMapsApiKey());
   const showMapsConsentHint = ready && consent === "essential" && hasMapsKey;
 
-  const [snapshot, setSnapshot] = useState<BookingFlowSnapshotV1 | null>(null);
+  const [initialState] = useState(loadInitialBookingState);
+  const [snapshot, setSnapshot] = useState<BookingFlowSnapshotV1 | null>(
+    initialState.snapshot
+  );
   const [pois, setPois] = useState<PoiCard[]>([]);
   const [waitConfig, setWaitConfig] = useState<WaitRatesConfig | null>(null);
   const [waitBand, setWaitBand] = useState<string>("day");
@@ -119,8 +139,10 @@ export function BookFlowClient({
   const [customAddress, setCustomAddress] = useState("");
   const [customLat, setCustomLat] = useState<number | undefined>();
   const [customLng, setCustomLng] = useState<number | undefined>();
-  const [routePickup, setRoutePickup] = useState("");
-  const [routeDestination, setRouteDestination] = useState("");
+  const [routePickup, setRoutePickup] = useState(initialState.routePickup);
+  const [routeDestination, setRouteDestination] = useState(
+    initialState.routeDestination
+  );
   const [customDuration, setCustomDuration] = useState(60);
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
@@ -136,21 +158,10 @@ export function BookFlowClient({
   ];
 
   useEffect(() => {
-    const raw = loadBookingFlowSnapshot();
-    if (!raw?.quotes?.sedan) {
+    if (snapshot === null) {
       router.replace(`/${locale}#prenota`);
-      return;
     }
-    setSnapshot(normalizeSnapshot(raw));
-  }, [locale, router]);
-
-  useEffect(() => {
-    if (!snapshot) {
-      return;
-    }
-    setRoutePickup(snapshot.pickup);
-    setRouteDestination(snapshot.destination);
-  }, [snapshot?.pickup, snapshot?.destination]);
+  }, [snapshot, locale, router]);
 
   useEffect(() => {
     void fetch("/api/wait-time-rates")
@@ -195,7 +206,17 @@ export function BookFlowClient({
   const persist = useCallback((next: BookingFlowSnapshotV1) => {
     const normalized = normalizeSnapshot(next);
     saveBookingFlowSnapshot(normalized);
-    setSnapshot(normalized);
+    setSnapshot((prev) => {
+      if (
+        !prev ||
+        prev.pickup !== normalized.pickup ||
+        prev.destination !== normalized.destination
+      ) {
+        setRoutePickup(normalized.pickup);
+        setRouteDestination(normalized.destination);
+      }
+      return normalized;
+    });
   }, []);
 
   const recalculateWithStops = useCallback(
@@ -229,7 +250,7 @@ export function BookFlowClient({
         let distanceKm = outbound.distanceKm ?? base.distanceKm;
         let durationMinutesEstimate =
           outbound.durationMinutesEstimate ?? base.durationMinutesEstimate;
-        let provider = outbound.provider ?? base.provider;
+        const provider = outbound.provider ?? base.provider;
 
         if (base.addReturn) {
           const returnRes = await fetch("/api/trips/calculate", {
