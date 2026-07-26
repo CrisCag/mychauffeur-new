@@ -3,7 +3,7 @@ import type {
   OrganizationId,
   TenantId,
   UserId,
-} from "@/lib/modules/identity";
+} from "@/lib/modules/identity/domain/identifiers";
 import { AuthorizationDeniedError } from "./authorization-denied-error";
 
 export type AuthenticationState = "ANONYMOUS" | "AUTHENTICATED";
