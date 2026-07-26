@@ -3,13 +3,14 @@ import type { Organization } from "../domain/organization";
 
 /**
  * Persistence Port for Organization Aggregate.
- * Tenant scope is explicit on every operation.
- * No adapter implementation in Step 0.
+ * Every operation requires explicit tenant scope.
  */
 export interface OrganizationRepository {
   findById(
     tenantId: TenantId,
     id: OrganizationId
   ): Promise<Organization | null>;
+  findByCode(tenantId: TenantId, code: string): Promise<Organization | null>;
+  findByTenant(tenantId: TenantId): Promise<Organization[]>;
   save(tenantId: TenantId, organization: Organization): Promise<void>;
 }
