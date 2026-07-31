@@ -1,12 +1,8 @@
 /**
- * Application authorization failure.
- * Message is intentional and non-sensitive (no resource/actor details).
+ * Re-export from Authorization Engine package.
+ * Kept for backward-compatible import paths used by SecurityContext helpers.
  */
-export class AuthorizationDeniedError extends Error {
-  readonly name = "AuthorizationDeniedError";
-
-  constructor() {
-    super("Authorization denied");
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
-}
+export {
+  AuthorizationDeniedError,
+  type AuthorizationDeniedErrorDetails,
+} from "./authorization/authorization-errors";
