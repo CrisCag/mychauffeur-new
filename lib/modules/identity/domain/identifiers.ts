@@ -8,6 +8,9 @@ declare const organizationIdBrand: unique symbol;
 declare const personIdBrand: unique symbol;
 declare const userIdBrand: unique symbol;
 declare const actorIdBrand: unique symbol;
+declare const membershipIdBrand: unique symbol;
+declare const roleIdBrand: unique symbol;
+declare const permissionIdBrand: unique symbol;
 
 export type TenantId = string & { readonly [tenantIdBrand]: "TenantId" };
 export type OrganizationId = string & {
@@ -16,6 +19,13 @@ export type OrganizationId = string & {
 export type PersonId = string & { readonly [personIdBrand]: "PersonId" };
 export type UserId = string & { readonly [userIdBrand]: "UserId" };
 export type ActorId = string & { readonly [actorIdBrand]: "ActorId" };
+export type MembershipId = string & {
+  readonly [membershipIdBrand]: "MembershipId";
+};
+export type RoleId = string & { readonly [roleIdBrand]: "RoleId" };
+export type PermissionId = string & {
+  readonly [permissionIdBrand]: "PermissionId";
+};
 
 export function asTenantId(value: string): TenantId {
   return value as TenantId;
@@ -35,4 +45,16 @@ export function asUserId(value: string): UserId {
 
 export function asActorId(value: string): ActorId {
   return value as ActorId;
+}
+
+export function asMembershipId(value: string): MembershipId {
+  return value as MembershipId;
+}
+
+export function asRoleId(value: string): RoleId {
+  return value as RoleId;
+}
+
+export function asPermissionId(value: string): PermissionId {
+  return value as PermissionId;
 }

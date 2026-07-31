@@ -60,6 +60,31 @@ describe("architecture fitness — identity module boundaries", () => {
     expect(source).not.toContain("InMemoryPersonRepository");
     expect(source).not.toContain("InMemoryUserRepository");
     expect(source).not.toContain("InMemoryExternalIdentityRepository");
+    expect(source).not.toContain("InMemoryOrganizationMembershipRepository");
+    expect(source).not.toContain("InMemoryRoleRepository");
+    expect(source).not.toContain("InMemoryPermissionRepository");
+    expect(source).not.toContain("InMemoryMembershipRoleRepository");
+    expect(source).not.toContain("InMemoryRolePermissionRepository");
+    expect(source).not.toContain("InMemoryPermissionResolver");
+  });
+
+  it("PermissionResolver remains a Port without concrete adapter imports in application", () => {
+    const resolverPort = path.join(
+      IDENTITY_APPLICATION,
+      "permission-resolver.ts"
+    );
+    const source = readFileSync(resolverPort, "utf8");
+    expect(source).not.toMatch(/InMemory/);
+    expect(source).not.toMatch(/@supabase|supabase-js/);
+    expect(source).not.toMatch(/from\s+["']next/);
+    expect(source).toContain("resolvePermissions");
+  });
+
+  it("Domain authorization model does not introduce wildcard permissions", () => {
+    for (const file of listSourceFiles(IDENTITY_DOMAIN)) {
+      const source = readFileSync(file, "utf8");
+      expect(source).not.toMatch(/\*\.\*|permission:\s*["']\*["']/);
+    }
   });
 
   it("API routes do not import DevelopmentAuthenticationProvider", () => {
