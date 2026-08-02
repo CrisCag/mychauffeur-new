@@ -53,7 +53,8 @@ Sezione di navigazione documentale. Non sostituisce i documenti sorgente: li ind
 > **Riferimenti (Data Architecture Framework):** [`docs/DATA_ARCHITECTURE_FRAMEWORK.md`](./DATA_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-027**).  
 > **Riferimenti (Security Architecture Framework):** [`docs/SECURITY_ARCHITECTURE_FRAMEWORK.md`](./SECURITY_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-028**).  
 > **Riferimenti (Role, Capability and Permission Catalog):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
-> **Riferimenti (Dispatch & Operations Engine Framework):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).
+> **Riferimenti (Dispatch & Operations Engine Framework):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
+> **Riferimenti (Customer, Driver & Partner Support Framework):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).
 
 | ID | Documento | Ruolo | Path |
 |----|-----------|-------|------|
@@ -317,6 +318,7 @@ Copre i requisiti di sicurezza applicativa, di infrastruttura e di processo: thr
 > **Riferimenti (AI & Automation Governance — security threats / kill switch):** [`docs/AI_AND_AUTOMATION_GOVERNANCE_FRAMEWORK.md`](./AI_AND_AUTOMATION_GOVERNANCE_FRAMEWORK.md) (**MC-OS-022**).  
 > **Riferimenti (Security Architecture Framework):** [`docs/SECURITY_ARCHITECTURE_FRAMEWORK.md`](./SECURITY_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-028**).  
 > **Riferimenti (Role, Capability and Permission Catalog — Authorization / Security Scope / Data Visibility):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
+> **Riferimenti (Customer, Driver & Partner Support Framework — Trust & Safety):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
 > **TODO:** Documentare threat model, controlli obbligatori e checklist di sicurezza allineate alla fase di stabilizzazione baseline.
 
 ---
@@ -442,6 +444,7 @@ Copre l’interfaccia destinata agli autisti: accettazione servizi, stato missio
 
 > **Riferimenti:** [`HANDOFF.md`](../HANDOFF.md) → Portale driver. [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Driver web; [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](../BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) → Non ancora incluso (production-ready).  
 > **Riferimenti (Dispatch & Operations Engine Framework — Driver Scope / Tracking / Candidate):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
+> **Riferimenti (Customer, Driver & Partner Support Framework — Driver Support):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
 > **TODO:** Documentare scope funzionale, stati missione e vincoli di usabilità del Driver Portal.
 
 ---
@@ -460,6 +463,7 @@ Descrive l’esperienza del cliente finale o corporate: richiesta servizi, track
 > **Riferimenti:** [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Le 5 superfici (Customer web IT/EN); Cosa esiste oggi.  
 > **Riferimenti (Customer Experience):** [`docs/CUSTOMER_EXPERIENCE_FRAMEWORK.md`](./CUSTOMER_EXPERIENCE_FRAMEWORK.md) (**MC-OS-018**).  
 > **Riferimenti (Dispatch & Operations Engine Framework — Live Journey / Customer Tracking):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
+> **Riferimenti (Customer, Driver & Partner Support Framework — Customer Operations / Support):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
 > **TODO:** Definire i journey cliente, i confini del self-service e i requisiti di comunicazione dello stato servizio.
 
 ---
@@ -476,6 +480,7 @@ Riguarda l’accesso riservato a partner commerciali (hotel, travel agency, corp
 ### 19.6 SLA e supporto partner
 
 > **Riferimenti:** [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Fase 4; Partner web. [`docs/DECISIONS_PENDING.md`](./DECISIONS_PENDING.md) → Modello partner. [`docs/PARTNER_LEGAL_AND_OPERATING_FRAMEWORK.md`](./PARTNER_LEGAL_AND_OPERATING_FRAMEWORK.md) → framework legale-operativo partner (progettazione, non contratto).  
+> **Riferimenti (Customer, Driver & Partner Support Framework — Partner Support):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
 > **TODO:** Specificare modello partner, capacità del portale e regole di visibilità/commissione.
 
 ---
@@ -508,7 +513,8 @@ Documenta la gestione anagrafiche, relazioni commerciali, pipeline e interazioni
 ### 21.5 Integrazione con booking e billing
 ### 21.6 Privacy e retention dei dati CRM
 
-> **TODO:** Definire il perimetro CRM, le entità canoniche e l’integrazione con i processi commerciali e operativi.
+> **TODO:** Definire il perimetro CRM, le entità canoniche e l’integrazione con i processi commerciali e operativi.  
+> **Riferimenti (Customer, Driver & Partner Support Framework — Customer Operations):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).
 
 ---
 
@@ -588,6 +594,7 @@ Descrive il ruolo dell’assistente AI nel prodotto: ambiti ammessi, guardrail, 
 
 > **Riferimenti (AI & Automation Governance):** [`docs/AI_AND_AUTOMATION_GOVERNANCE_FRAMEWORK.md`](./AI_AND_AUTOMATION_GOVERNANCE_FRAMEWORK.md) (**MC-OS-022**).  
 > **Riferimenti (Dispatch & Operations Engine Framework — AI Dispatch Assistant boundary):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
+> **Riferimenti (Customer, Driver & Partner Support Framework — AI Support Assistant boundary):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
 > **TODO:** Definire scope dell’AI Assistant, guardrail obbligatori e confini rispetto alle decisioni operative automatiche.
 
 ---
@@ -621,6 +628,7 @@ Descrive i processi end-to-end (es. dalla richiesta alla chiusura servizio) e le
 
 > **Riferimenti (Role, Capability and Permission Catalog — Operations / Assignment Modes):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
 > **Riferimenti (Dispatch & Operations Engine Framework — Operations / Assignment / Recovery):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
+> **Riferimenti (Customer, Driver & Partner Support Framework — Live Operations / Support / Trust & Safety):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
 > **TODO:** Mappare i workflow operativi canonici, gli handoff e i punti di automazione/controllo umano.
 
 ---
@@ -875,6 +883,7 @@ Organizza le fasi di evoluzione del prodotto e dell’architettura, con dipenden
 > - [`HANDOFF.md`](../HANDOFF.md) → §5 Roadmap (stato sintetico).  
 > - [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](../BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) → baseline / audit Fase 0.  
 > - [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**) → Implementation Sequence Dispatch/Operations.  
+> - [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**) → Implementation Sequence Support / Live Ops / Trust & Safety.  
 > **Numerazione:** le fasi operative del progetto sono **0–5** (non confondere con i capitoli 1–47 di questo Blueprint).  
 > **TODO:** Integrare nel Blueprint il dettaglio delle fasi 0–5 senza duplicare lo stato runtime già mantenuto in `PLATFORM_MAP.md` / `HANDOFF.md`.
 
