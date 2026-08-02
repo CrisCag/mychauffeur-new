@@ -4,10 +4,10 @@
 |-------|--------|
 | **Codice documento** | MC-OS-000 |
 | **Titolo** | Enterprise Documentation Governance Framework (EDGF) |
-| **Versione** | 0.17.0 |
+| **Versione** | 0.18.1 |
 | **Stato** | Draft |
 | **Data creazione** | 2026-07-26 |
-| **Ultima modifica** | 2026-07-31 |
+| **Ultima modifica** | 2026-08-01 |
 | **Owner** | Documentation Governance Lead |
 | **Autori** | Enterprise Documentation Architect |
 | **Documenti correlati** | [`MASTER_BLUEPRINT.md`](./MASTER_BLUEPRINT.md), [`BUSINESS_OPERATING_SYSTEM.md`](./BUSINESS_OPERATING_SYSTEM.md), [`PARTNER_LEGAL_AND_OPERATING_FRAMEWORK.md`](./PARTNER_LEGAL_AND_OPERATING_FRAMEWORK.md), [`SETTLEMENT_AND_FINANCIAL_OPERATIONS_FRAMEWORK.md`](./SETTLEMENT_AND_FINANCIAL_OPERATIONS_FRAMEWORK.md), [`DECISIONS_PENDING.md`](./DECISIONS_PENDING.md), [`PLATFORM_MAP.md`](../PLATFORM_MAP.md), [`HANDOFF.md`](../HANDOFF.md) |
@@ -222,22 +222,23 @@ Il presente registro (§4.3) è la **Source of Truth** per l’assegnazione dei 
 | **MC-OS-027** | Data Architecture Framework | `docs/DATA_ARCHITECTURE_FRAMEWORK.md` | **Esistente** (Draft v0.1.0 — Owner: Data Architecture & Platform Engineering) |
 | **MC-OS-028** | Security Architecture Framework | `docs/SECURITY_ARCHITECTURE_FRAMEWORK.md` | **Esistente** (Draft v0.1.0 — Owner: Security Architecture & Platform Engineering) |
 | **MC-OS-029** | Role, Capability and Permission Catalog | `docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md` | **Esistente** (Draft v0.1.0 — Owner: Identity, Authorization & Product Operations) |
+| **MC-OS-030** | Dispatch & Operations Engine Framework | `docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md` | **Esistente** (Draft v0.1.1 — Owner: Dispatch, Operations & Platform Engineering) |
 
 ### 4.3.1 Prossimo codice disponibile
 
 Il prossimo Document Identifier disponibile per un **nuovo** documento ufficiale di dominio è:
 
 ```text
-MC-OS-030
+MC-OS-031
 ```
 
-**MC-OS-013 … MC-OS-029 non sono più disponibili** (già assegnati / Esistenti).  
+**MC-OS-013 … MC-OS-030 non sono più disponibili** (già assegnati / Esistenti).  
 Non assegnare `MC-OS-010` (riservato storicamente ADR Index; indice operativo = **MC-OS-024** — relazione formale OPEN) né riusare codici Esistenti / Prenotati / Riservati.
 
 ### 4.4 Regole operative
 
 1. Il **Document Identifier è immutabile** per l’intera vita logica del documento (§4.2).  
-2. Un nuovo documento riceve il **prossimo codice libero** indicato in §4.3.1 (oggi `MC-OS-030`); non si riusano codici di documenti Archived.  
+2. Un nuovo documento riceve il **prossimo codice libero** indicato in §4.3.1 (oggi `MC-OS-031`); non si riusano codici di documenti Archived.  
 3. Il codice compare nell’header, nei cross-reference, nel nome PDF ufficiale e nei file diagramma (quando applicati).  
 4. I sotto-allegati possono usare suffisso: `MC-OS-005-A` (schedule), solo se necessario; il codice padre resta immutabile.  
 5. L’assegnazione è registrata **solo** in questo EDGF (§4.3); in futuro anche in `00_GOVERNANCE/DOCUMENT_REGISTER.md` (cartella non ancora creata).
@@ -248,11 +249,11 @@ Non assegnare `MC-OS-010` (riservato storicamente ADR Index; indice operativo = 
 
 Nessun agente (umano o AI) può assegnare autonomamente un codice già:
 
-- **utilizzato** (Esistente) — incluso **MC-OS-012** … **MC-OS-029**,
+- **utilizzato** (Esistente) — incluso **MC-OS-012** … **MC-OS-030**,
 - **prenotato**,
 - **riservato**.
 
-Il prossimo codice **assegnabile** è **MC-OS-030** (§4.3.1).  
+Il prossimo codice **assegnabile** è **MC-OS-031** (§4.3.1).  
 Ogni nuovo codice deve essere verificato nel registro EDGF prima della creazione del documento.
 
 In caso di dubbio: aggiornare prima il registro EDGF, poi creare il documento con il prossimo codice libero.
@@ -540,6 +541,7 @@ Dopo la migrazione cartelle, aggiornare i path relativi; il **codice MC-OS-NNN r
 | Data Architecture (modello dati, ownership, persistence) | Data Architecture Framework (**Esistente**, Draft v0.1.0) | **MC-OS-027** |
 | Security Architecture (AuthN/AuthZ, isolation, secrets, audit security) | Security Architecture Framework (**Esistente**, Draft v0.1.0) | **MC-OS-028** |
 | Role / Capability / Permission Catalog (Actor, Scope, Data Visibility, Matrix MVP, Authorization Decision) | Role, Capability and Permission Catalog (**Esistente**, Draft v0.1.0) | **MC-OS-029** |
+| Dispatch & Operations Engine (Hybrid Timed Multi-Candidate, Ranking, Recovery, Tracking) | Dispatch & Operations Engine Framework (**Esistente**, Draft v0.1.1) | **MC-OS-030** |
 | Modello concettuale entità di business | Business Entity Model (**esistente**) | **MC-OS-011** |
 | Partner Exchange Marketplace B2B (Partner-to-Partner) | Partner Exchange Marketplace Framework (**esistente**, Draft) | **MC-OS-012** |
 
@@ -674,7 +676,8 @@ Ordine consigliato dei lavori **ancora mancanti** (solo documentazione):
 | — | ~~Data Architecture Framework~~ — **completato**: MC-OS-027 (**Esistente** Draft v0.1.0) | **MC-OS-027** |
 | — | ~~Security Architecture Framework~~ — **completato**: MC-OS-028 (**Esistente** Draft v0.1.0) | **MC-OS-028** |
 | — | ~~Role, Capability and Permission Catalog~~ — **completato**: MC-OS-029 (**Esistente** Draft v0.1.0) | **MC-OS-029** |
-| — | Prossimo nuovo documento di dominio (non ancora definito) | **MC-OS-030** |
+| — | ~~Dispatch & Operations Engine Framework~~ — **completato**: MC-OS-030 (**Esistente** Draft v0.1.1) | **MC-OS-030** |
+| — | Prossimo nuovo documento di dominio (non ancora definito) | **MC-OS-031** |
 
 Note: le voci 3, 8 e 8b restano in tabella solo come tracciabilità di completamento; non sono più deliverable di creazione aperti (8b resta in revisione).
 
@@ -758,6 +761,8 @@ Citazione nel Markdown:
 
 | Versione | Data | Autore | Descrizione modifica | Stato |
 |----------|------|--------|----------------------|-------|
+| 0.18.1 | 2026-08-01 | Enterprise Documentation Governance Architect | Aggiornamento registro MC-OS-030 a Draft v0.1.1 (patch documentale Dispatch: tracking end-to-end, feedback reciproco, Phase 2/Deferred marketplace, OWNER_OPERATED); prossimo codice libero resta MC-OS-031. | Draft |
+| 0.18.0 | 2026-08-01 | Enterprise Documentation Governance Architect | Registrazione MC-OS-030 Dispatch & Operations Engine Framework come Esistente (Draft v0.1.0); prossimo codice libero MC-OS-031; aggiornamento SoT e roadmap. | Draft |
 | 0.17.0 | 2026-07-31 | Enterprise Documentation Governance Architect | Registrazione MC-OS-029 Role, Capability and Permission Catalog come Esistente (Draft v0.1.0); prossimo codice libero MC-OS-030; aggiornamento SoT e roadmap. | Draft |
 | 0.16.0 | 2026-07-26 | Enterprise Documentation Governance Architect | Registrazione MC-OS-028 Security Architecture Framework come Esistente (Draft v0.1.0); prossimo codice libero MC-OS-029; aggiornamento SoT e roadmap. | Draft |
 | 0.15.0 | 2026-07-26 | Enterprise Documentation Governance Architect | Registrazione MC-OS-027 Data Architecture Framework come Esistente (Draft v0.1.0); prossimo codice libero MC-OS-028; aggiornamento SoT e roadmap. | Draft |
@@ -778,4 +783,4 @@ Citazione nel Markdown:
 
 ---
 
-*Fine di MC-OS-000 Enterprise Documentation Governance Framework (EDGF) v0.17.0 — Draft. Standard di governance documentale; non implementa cartelle, PDF o diagrammi.*
+*Fine di MC-OS-000 Enterprise Documentation Governance Framework (EDGF) v0.18.1 — Draft. Standard di governance documentale; non implementa cartelle, PDF o diagrammi.*

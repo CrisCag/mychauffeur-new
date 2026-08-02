@@ -52,7 +52,8 @@ Sezione di navigazione documentale. Non sostituisce i documenti sorgente: li ind
 > **Riferimenti (Software Architecture Framework):** [`docs/SOFTWARE_ARCHITECTURE_FRAMEWORK.md`](./SOFTWARE_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-026**).  
 > **Riferimenti (Data Architecture Framework):** [`docs/DATA_ARCHITECTURE_FRAMEWORK.md`](./DATA_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-027**).  
 > **Riferimenti (Security Architecture Framework):** [`docs/SECURITY_ARCHITECTURE_FRAMEWORK.md`](./SECURITY_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-028**).  
-> **Riferimenti (Role, Capability and Permission Catalog):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).
+> **Riferimenti (Role, Capability and Permission Catalog):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
+> **Riferimenti (Dispatch & Operations Engine Framework):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).
 
 | ID | Documento | Ruolo | Path |
 |----|-----------|-------|------|
@@ -388,6 +389,7 @@ Documenta le policy di Row Level Security come meccanismo di enforcement a livel
 
 > **Riferimenti:** [`HANDOFF.md`](../HANDOFF.md) → Booking (flusso cliente). [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Cosa esiste oggi / Funnel `/book`.  
 > **Riferimenti (Booking & Service Lifecycle):** [`docs/BOOKING_AND_SERVICE_LIFECYCLE_FRAMEWORK.md`](./BOOKING_AND_SERVICE_LIFECYCLE_FRAMEWORK.md) (**MC-OS-014**).  
+> **Riferimenti (Dispatch & Operations Engine Framework — Assignment / Live Journey):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **TODO:** Documentare stati, transizioni e regole di business del booking engine, senza entrare in dettaglio di implementazione.
 
 ---
@@ -422,6 +424,7 @@ Descrive la console operativa per la centrale: monitoraggio servizi, assegnazion
 
 > **Riferimenti:** [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Modello operativo (Dispatcher); Le 5 superfici (Operator / Dispatch); Fase 2–4.  
 > **Riferimenti (Role, Capability and Permission Catalog — Assignment / Dispatcher Matrix):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
+> **Riferimenti (Dispatch & Operations Engine Framework):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **TODO:** Definire capacità, flussi critici e requisiti UX/operativi della Dispatcher Console.
 
 ---
@@ -438,6 +441,7 @@ Copre l’interfaccia destinata agli autisti: accettazione servizi, stato missio
 ### 17.6 Sicurezza e privacy lato driver
 
 > **Riferimenti:** [`HANDOFF.md`](../HANDOFF.md) → Portale driver. [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Driver web; [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](../BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) → Non ancora incluso (production-ready).  
+> **Riferimenti (Dispatch & Operations Engine Framework — Driver Scope / Tracking / Candidate):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **TODO:** Documentare scope funzionale, stati missione e vincoli di usabilità del Driver Portal.
 
 ---
@@ -455,6 +459,7 @@ Descrive l’esperienza del cliente finale o corporate: richiesta servizi, track
 
 > **Riferimenti:** [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Le 5 superfici (Customer web IT/EN); Cosa esiste oggi.  
 > **Riferimenti (Customer Experience):** [`docs/CUSTOMER_EXPERIENCE_FRAMEWORK.md`](./CUSTOMER_EXPERIENCE_FRAMEWORK.md) (**MC-OS-018**).  
+> **Riferimenti (Dispatch & Operations Engine Framework — Live Journey / Customer Tracking):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **TODO:** Definire i journey cliente, i confini del self-service e i requisiti di comunicazione dello stato servizio.
 
 ---
@@ -582,6 +587,7 @@ Descrive il ruolo dell’assistente AI nel prodotto: ambiti ammessi, guardrail, 
 ### 26.6 Roadmap capacità AI
 
 > **Riferimenti (AI & Automation Governance):** [`docs/AI_AND_AUTOMATION_GOVERNANCE_FRAMEWORK.md`](./AI_AND_AUTOMATION_GOVERNANCE_FRAMEWORK.md) (**MC-OS-022**).  
+> **Riferimenti (Dispatch & Operations Engine Framework — AI Dispatch Assistant boundary):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **TODO:** Definire scope dell’AI Assistant, guardrail obbligatori e confini rispetto alle decisioni operative automatiche.
 
 ---
@@ -614,6 +620,7 @@ Descrive i processi end-to-end (es. dalla richiesta alla chiusura servizio) e le
 ### 28.6 KPI di processo
 
 > **Riferimenti (Role, Capability and Permission Catalog — Operations / Assignment Modes):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
+> **Riferimenti (Dispatch & Operations Engine Framework — Operations / Assignment / Recovery):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **TODO:** Mappare i workflow operativi canonici, gli handoff e i punti di automazione/controllo umano.
 
 ---
@@ -867,6 +874,7 @@ Organizza le fasi di evoluzione del prodotto e dell’architettura, con dipenden
 > - [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → **Roadmap (ordine ufficiale)** — Fasi 0–5 (fonte primaria).  
 > - [`HANDOFF.md`](../HANDOFF.md) → §5 Roadmap (stato sintetico).  
 > - [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](../BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) → baseline / audit Fase 0.  
+> - [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**) → Implementation Sequence Dispatch/Operations.  
 > **Numerazione:** le fasi operative del progetto sono **0–5** (non confondere con i capitoli 1–47 di questo Blueprint).  
 > **TODO:** Integrare nel Blueprint il dettaglio delle fasi 0–5 senza duplicare lo stato runtime già mantenuto in `PLATFORM_MAP.md` / `HANDOFF.md`.
 
