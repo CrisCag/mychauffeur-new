@@ -54,7 +54,8 @@ Sezione di navigazione documentale. Non sostituisce i documenti sorgente: li ind
 > **Riferimenti (Security Architecture Framework):** [`docs/SECURITY_ARCHITECTURE_FRAMEWORK.md`](./SECURITY_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-028**).  
 > **Riferimenti (Role, Capability and Permission Catalog):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
 > **Riferimenti (Dispatch & Operations Engine Framework):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
-> **Riferimenti (Customer, Driver & Partner Support Framework):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).
+> **Riferimenti (Customer, Driver & Partner Support Framework):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
+> **Riferimenti (Commercial Booking Domain Framework):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).
 
 | ID | Documento | Ruolo | Path |
 |----|-----------|-------|------|
@@ -264,6 +265,7 @@ Descrive il linguaggio ubiquo e le entità di dominio centrali (tenant, booking,
 > **Riferimenti (Business Domain Model ufficiale):** [`docs/BUSINESS_ENTITY_MODEL.md`](./BUSINESS_ENTITY_MODEL.md) (MC-OS-011). Terminologia: [`docs/DOMAIN_GLOSSARY_AND_BUSINESS_DICTIONARY.md`](./DOMAIN_GLOSSARY_AND_BUSINESS_DICTIONARY.md) (MC-OS-009).  
 > **Riferimenti (System Domain Architecture / Bounded Context):** [`docs/SYSTEM_DOMAIN_ARCHITECTURE.md`](./SYSTEM_DOMAIN_ARCHITECTURE.md) (**MC-OS-019**).  
 > **Riferimenti (Data Architecture Framework — Entity / persistence ownership):** [`docs/DATA_ARCHITECTURE_FRAMEWORK.md`](./DATA_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-027**).  
+> **Riferimenti (Commercial Booking Domain Framework — Booking Aggregate / Snapshot ownership):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Pubblicare invarianti di dominio nel Blueprint rinviano al modello entità; non duplicare schede entità.
 
 ---
@@ -319,6 +321,7 @@ Copre i requisiti di sicurezza applicativa, di infrastruttura e di processo: thr
 > **Riferimenti (Security Architecture Framework):** [`docs/SECURITY_ARCHITECTURE_FRAMEWORK.md`](./SECURITY_ARCHITECTURE_FRAMEWORK.md) (**MC-OS-028**).  
 > **Riferimenti (Role, Capability and Permission Catalog — Authorization / Security Scope / Data Visibility):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
 > **Riferimenti (Customer, Driver & Partner Support Framework — Trust & Safety):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
+> **Riferimenti (Commercial Booking Domain Framework — Guest Booking / PII / Isolation):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Documentare threat model, controlli obbligatori e checklist di sicurezza allineate alla fase di stabilizzazione baseline.
 
 ---
@@ -390,8 +393,10 @@ Documenta le policy di Row Level Security come meccanismo di enforcement a livel
 ### 14.6 Integrazione con pricing, fleet e notifiche
 
 > **Riferimenti:** [`HANDOFF.md`](../HANDOFF.md) → Booking (flusso cliente). [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Cosa esiste oggi / Funnel `/book`.  
-> **Riferimenti (Booking & Service Lifecycle):** [`docs/BOOKING_AND_SERVICE_LIFECYCLE_FRAMEWORK.md`](./BOOKING_AND_SERVICE_LIFECYCLE_FRAMEWORK.md) (**MC-OS-014**).  
+> **Riferimenti (Booking & Service Lifecycle — cross-domain SoT):** [`docs/BOOKING_AND_SERVICE_LIFECYCLE_FRAMEWORK.md`](./BOOKING_AND_SERVICE_LIFECYCLE_FRAMEWORK.md) (**MC-OS-014**).  
+> **Riferimenti (Commercial Booking Domain Framework — Booking Aggregate / Commercial Snapshot / Step 5):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **Riferimenti (Dispatch & Operations Engine Framework — Assignment / Live Journey):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
+> **Nota:** MC-OS-014 resta la Source of Truth del lifecycle cross-domain; MC-OS-032 approfondisce il dominio commerciale Booking senza sostituirlo.  
 > **TODO:** Documentare stati, transizioni e regole di business del booking engine, senza entrare in dettaglio di implementazione.
 
 ---
@@ -409,6 +414,7 @@ Definisce come vengono calcolati prezzi, tariffe, supplementi e quotazioni, in c
 
 > **Riferimenti:** [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Motore tariffario NCC. [`docs/NCC_TARIFF_REQUIREMENTS.md`](./NCC_TARIFF_REQUIREMENTS.md). [`HANDOFF.md`](../HANDOFF.md) → Pricing.  
 > **Riferimenti (Pricing & Revenue Management):** [`docs/PRICING_AND_REVENUE_MANAGEMENT_FRAMEWORK.md`](./PRICING_AND_REVENUE_MANAGEMENT_FRAMEWORK.md) (**MC-OS-017**).  
+> **Riferimenti (Commercial Booking Domain Framework — Price Snapshot / Quote boundary):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Formalizzare il modello di pricing, i riferimenti ai requisiti tariffari e le regole di override/audit.
 
 ---
@@ -464,6 +470,7 @@ Descrive l’esperienza del cliente finale o corporate: richiesta servizi, track
 > **Riferimenti (Customer Experience):** [`docs/CUSTOMER_EXPERIENCE_FRAMEWORK.md`](./CUSTOMER_EXPERIENCE_FRAMEWORK.md) (**MC-OS-018**).  
 > **Riferimenti (Dispatch & Operations Engine Framework — Live Journey / Customer Tracking):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **Riferimenti (Customer, Driver & Partner Support Framework — Customer Operations / Support):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
+> **Riferimenti (Commercial Booking Domain Framework — Customer / Booker / Passenger / Guest Booking):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Definire i journey cliente, i confini del self-service e i requisiti di comunicazione dello stato servizio.
 
 ---
@@ -514,7 +521,8 @@ Documenta la gestione anagrafiche, relazioni commerciali, pipeline e interazioni
 ### 21.6 Privacy e retention dei dati CRM
 
 > **TODO:** Definire il perimetro CRM, le entità canoniche e l’integrazione con i processi commerciali e operativi.  
-> **Riferimenti (Customer, Driver & Partner Support Framework — Customer Operations):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).
+> **Riferimenti (Customer, Driver & Partner Support Framework — Customer Operations):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
+> **Riferimenti (Commercial Booking Domain Framework — Commerce / Booker channels):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).
 
 ---
 
@@ -545,6 +553,7 @@ Descrive l’acquisizione dei pagamenti, i provider, gli stati di pagamento e la
 ### 23.6 Requisiti PCI e gestione dati sensibili
 
 > **Riferimenti:** [`PLATFORM_MAP.md`](../PLATFORM_MAP.md) → Fase 3. [`docs/DECISIONS_PENDING.md`](./DECISIONS_PENDING.md) → Provider pagamenti / acconto / cancellazioni.  
+> **Riferimenti (Commercial Booking Domain Framework — Payment boundary / Refund readiness):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Formalizzare flussi di pagamento, stati e requisiti di compliance PCI/privacy applicabili.
 
 ---
@@ -562,6 +571,7 @@ Tratta fatturazione, cicli di addebito, documenti fiscali e regole di fatturazio
 
 > **Riferimenti (modello economico e operativo):** [`docs/BUSINESS_OPERATING_SYSTEM.md`](./BUSINESS_OPERATING_SYSTEM.md).  
 > **Riferimenti (settlement e operazioni finanziarie):** [`docs/SETTLEMENT_AND_FINANCIAL_OPERATIONS_FRAMEWORK.md`](./SETTLEMENT_AND_FINANCIAL_OPERATIONS_FRAMEWORK.md).  
+> **Riferimenti (Commercial Booking Domain Framework — Billing Snapshot / Invoice boundary):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Definire modelli di billing, documenti e integrazioni contabili, con attenzione ai vincoli fiscali locali.
 
 ---
@@ -629,6 +639,7 @@ Descrive i processi end-to-end (es. dalla richiesta alla chiusura servizio) e le
 > **Riferimenti (Role, Capability and Permission Catalog — Operations / Assignment Modes):** [`docs/ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md`](./ROLE_CAPABILITY_AND_PERMISSION_CATALOG.md) (**MC-OS-029**).  
 > **Riferimenti (Dispatch & Operations Engine Framework — Operations / Assignment / Recovery):** [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**).  
 > **Riferimenti (Customer, Driver & Partner Support Framework — Live Operations / Support / Trust & Safety):** [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**).  
+> **Riferimenti (Commercial Booking Domain Framework — Service generation boundary / Support & Dispatch integration):** [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**).  
 > **TODO:** Mappare i workflow operativi canonici, gli handoff e i punti di automazione/controllo umano.
 
 ---
@@ -884,6 +895,7 @@ Organizza le fasi di evoluzione del prodotto e dell’architettura, con dipenden
 > - [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](../BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) → baseline / audit Fase 0.  
 > - [`docs/DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md`](./DISPATCH_AND_OPERATIONS_ENGINE_FRAMEWORK.md) (**MC-OS-030**) → Implementation Sequence Dispatch/Operations.  
 > - [`docs/CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md`](./CUSTOMER_DRIVER_PARTNER_SUPPORT_FRAMEWORK.md) (**MC-OS-031**) → Implementation Sequence Support / Live Ops / Trust & Safety.  
+> - [`docs/COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md`](./COMMERCIAL_BOOKING_DOMAIN_FRAMEWORK.md) (**MC-OS-032**) → Step 5 Booking Foundation / Commercial Snapshot sequence.  
 > **Numerazione:** le fasi operative del progetto sono **0–5** (non confondere con i capitoli 1–47 di questo Blueprint).  
 > **TODO:** Integrare nel Blueprint il dettaglio delle fasi 0–5 senza duplicare lo stato runtime già mantenuto in `PLATFORM_MAP.md` / `HANDOFF.md`.
 
