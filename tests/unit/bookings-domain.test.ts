@@ -267,13 +267,14 @@ describe("bookings domain — Step 5", () => {
       customerId: asCustomerId(randomUUID()),
       source: "B2C_WEB",
     });
-    const pending = requestBookingConfirmation(
-      draft,
-      new Date("2026-08-02T12:00:00.000Z")
-    );
+    const at = new Date(draft.updatedAt.getTime() + 1);
+    const pending = requestBookingConfirmation(draft, at);
     expect(draft.status).toBe("DRAFT");
     expect(draft.version).toBe(0);
     expect(pending.status).toBe("PENDING_CONFIRMATION");
+    expect(pending.version).toBe(1);
+    expect(pending).not.toBe(draft);
+    expect(pending.updatedAt.getTime()).toBe(at.getTime());
   });
 
   it("protects nested guest snapshot and does not share Date references", () => {
