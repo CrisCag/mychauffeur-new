@@ -66,6 +66,19 @@ export class InMemoryBookingRepository implements BookingRepository {
       createdAt: new Date(booking.createdAt.getTime()),
       updatedAt: new Date(booking.updatedAt.getTime()),
       version: booking.version,
+      priceSnapshot: booking.priceSnapshot
+        ? { ...booking.priceSnapshot }
+        : null,
+      policySnapshot: booking.policySnapshot
+        ? { ...booking.policySnapshot }
+        : null,
+      contactSnapshot: booking.contactSnapshot
+        ? { ...booking.contactSnapshot }
+        : null,
+      billingSnapshot: booking.billingSnapshot
+        ? { ...booking.billingSnapshot }
+        : null,
+      commercialRevision: booking.commercialRevision,
     });
   }
 
@@ -109,9 +122,16 @@ export class InMemoryBookingRepository implements BookingRepository {
       throw new BookingVersionConflictError();
     }
 
-    // bookingNumber is immutable after create (matches Aggregate policy).
+    // bookingNumber and identity scope are immutable after create.
     if (existing.bookingNumber !== booking.bookingNumber) {
       throw new DomainValidationError("BookingNumber is immutable");
+    }
+    if (
+      existing.id !== booking.id ||
+      existing.tenantId !== booking.tenantId ||
+      existing.organizationId !== booking.organizationId
+    ) {
+      throw new DomainValidationError("Booking identity scope is immutable");
     }
 
     this.byId.set(key, this.clone(booking));

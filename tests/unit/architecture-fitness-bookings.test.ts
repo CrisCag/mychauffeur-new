@@ -75,6 +75,21 @@ describe("architecture fitness — bookings module boundaries", () => {
       /CUSTOMER_DRIVER_PARTNER_SUPPORT/,
       /payment-provider/i,
       /pricing-engine/i,
+      /quote-engine/i,
+      /from\s+["']fs["']/,
+      /readFileSync/,
+      /writeFileSync/,
+    ]);
+  });
+
+  it("Domain commercial snapshots do not model card numbers, tokens, or runtime JSON SoT", () => {
+    const files = listSourceFiles(BOOKINGS_DOMAIN);
+    assertNoForbiddenImports(files, [
+      /\bcardNumber\b/,
+      /paymentToken/i,
+      /\bcvv\b/i,
+      /trip-ops-store/,
+      /booking-requests\.json/,
     ]);
   });
 });

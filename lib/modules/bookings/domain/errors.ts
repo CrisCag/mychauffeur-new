@@ -92,3 +92,21 @@ export class DuplicateBookingNumberError extends Error {
     Object.setPrototypeOf(this, new.target.prototype);
   }
 }
+
+export class MissingCommercialSnapshotError extends Error {
+  readonly name = "MissingCommercialSnapshotError";
+
+  constructor(message = "Booking confirmation requires complete commercial snapshots") {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
+export class CommercialSnapshotImmutableError extends Error {
+  readonly name = "CommercialSnapshotImmutableError";
+
+  constructor(message = "Commercial snapshots are immutable after confirmation") {
+    super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}

@@ -12,14 +12,29 @@ import {
   isBookingStatus,
   isTerminalBookingStatus,
 } from "./booking-status";
+import type { BillingSnapshot } from "./billing-snapshot";
+import type { ContactSnapshot } from "./contact-snapshot";
 import {
+  assertCommercialSnapshotInvariants,
+  cloneCommercialFields,
+  commercialFieldsFromBundle,
+  createCommercialSnapshots,
+  emptyCommercialSnapshotFields,
+  type CommercialSnapshotFields,
+  type CommercialSnapshotsInput,
+} from "./commercial-snapshots";
+import {
+  CommercialSnapshotImmutableError,
   DomainValidationError,
   InvalidBookingIdError,
   InvalidBookingStateTransitionError,
   MissingBookingCustomerError,
+  MissingCommercialSnapshotError,
 } from "./errors";
 import type { GuestCustomerSnapshot } from "./guest-customer-snapshot";
 import { createGuestCustomerSnapshot } from "./guest-customer-snapshot";
+import type { PolicySnapshot } from "./policy-snapshot";
+import type { PriceSnapshot } from "./price-snapshot";
 
 declare const bookingIdBrand: unique symbol;
 
@@ -50,9 +65,12 @@ export function asCustomerId(value: string): CustomerId {
 }
 
 /**
- * Booking Aggregate Root — commercial foundation (Step 5 / MC-OS-032).
- * Pure Domain: no Infrastructure, Next.js, Supabase, Pricing, Payment,
- * Service generation, Dispatch, GPS, or SupportCase.
+ * Booking Aggregate Root — commercial foundation (Step 5–6 / MC-OS-032).
+ * Pure Domain: no Infrastructure, Next.js, Supabase, Pricing Engine,
+ * Payment provider, Service generation, Dispatch, GPS, or SupportCase.
+ *
+ * Commercial snapshots freeze at PENDING_CONFIRMATION → CONFIRMED.
+ * Future commercial changes require append-only BookingRevision (not in Step 6).
  */
 export type Booking = {
   readonly id: BookingId;
@@ -71,6 +89,12 @@ export type Booking = {
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly version: number;
+  readonly priceSnapshot: PriceSnapshot | null;
+  readonly policySnapshot: PolicySnapshot | null;
+  readonly contactSnapshot: ContactSnapshot | null;
+  readonly billingSnapshot: BillingSnapshot | null;
+  /** 0 before commercial freeze; >=1 after confirmation (revision readiness). */
+  readonly commercialRevision: number;
 };
 
 export type CreateBookingInput = {
@@ -109,6 +133,11 @@ export type RehydrateBookingInput = {
   createdAt: Date;
   updatedAt: Date;
   version: number;
+  priceSnapshot?: PriceSnapshot | null;
+  policySnapshot?: PolicySnapshot | null;
+  contactSnapshot?: ContactSnapshot | null;
+  billingSnapshot?: BillingSnapshot | null;
+  commercialRevision?: number;
 };
 
 function assertNonEmptyId(value: string, field: string): string {
@@ -187,7 +216,18 @@ function copyDate(value: Date): Date {
   return new Date(value.getTime());
 }
 
+function commercialFromBooking(booking: Booking): CommercialSnapshotFields {
+  return {
+    priceSnapshot: booking.priceSnapshot,
+    policySnapshot: booking.policySnapshot,
+    contactSnapshot: booking.contactSnapshot,
+    billingSnapshot: booking.billingSnapshot,
+    commercialRevision: booking.commercialRevision,
+  };
+}
+
 function freezeBooking(booking: Booking): Booking {
+  const commercial = cloneCommercialFields(commercialFromBooking(booking));
   return Object.freeze({
     ...booking,
     requestedAt: copyDate(booking.requestedAt),
@@ -199,11 +239,16 @@ function freezeBooking(booking: Booking): Booking {
     guestCustomerSnapshot: booking.guestCustomerSnapshot
       ? Object.freeze({ ...booking.guestCustomerSnapshot })
       : null,
+    priceSnapshot: commercial.priceSnapshot,
+    policySnapshot: commercial.policySnapshot,
+    contactSnapshot: commercial.contactSnapshot,
+    billingSnapshot: commercial.billingSnapshot,
+    commercialRevision: commercial.commercialRevision,
   });
 }
 
 /**
- * Allowed Step 5 transitions.
+ * Allowed transitions (Step 5 subset).
  * DRAFT → PENDING_CONFIRMATION | CANCELLED | EXPIRED
  * PENDING_CONFIRMATION → CONFIRMED | CANCELLED | EXPIRED
  * CONFIRMED → CANCELLED
@@ -265,12 +310,12 @@ export function createBooking(input: CreateBookingInput): Booking {
   const status: BookingStatus = "DRAFT";
   assertStatusTimestamps(status, null, null, null);
 
-  // New Booking always starts at version 0. Updates increment via transitions.
   if (input.version !== undefined && input.version !== 0) {
-    throw new DomainValidationError(
-      "New Booking version must be 0"
-    );
+    throw new DomainValidationError("New Booking version must be 0");
   }
+
+  const empty = emptyCommercialSnapshotFields();
+  assertCommercialSnapshotInvariants(status, empty);
 
   return freezeBooking({
     id,
@@ -289,6 +334,7 @@ export function createBooking(input: CreateBookingInput): Booking {
     createdAt: now,
     updatedAt,
     version: 0,
+    ...empty,
   });
 }
 
@@ -332,6 +378,15 @@ export function rehydrateBooking(input: RehydrateBookingInput): Booking {
   const expiredAt = input.expiredAt ?? null;
   assertStatusTimestamps(status, confirmedAt, cancelledAt, expiredAt);
 
+  const commercial: CommercialSnapshotFields = {
+    priceSnapshot: input.priceSnapshot ?? null,
+    policySnapshot: input.policySnapshot ?? null,
+    contactSnapshot: input.contactSnapshot ?? null,
+    billingSnapshot: input.billingSnapshot ?? null,
+    commercialRevision: input.commercialRevision ?? 0,
+  };
+  assertCommercialSnapshotInvariants(status, commercial);
+
   return freezeBooking({
     id,
     tenantId,
@@ -349,6 +404,7 @@ export function rehydrateBooking(input: RehydrateBookingInput): Booking {
     createdAt: copyDate(input.createdAt),
     updatedAt: copyDate(input.updatedAt),
     version: assertVersion(input.version),
+    ...cloneCommercialFields(commercial),
   });
 }
 
@@ -360,13 +416,16 @@ function transition(
     confirmedAt?: Date | null;
     cancelledAt?: Date | null;
     expiredAt?: Date | null;
-  }
+  },
+  commercial: CommercialSnapshotFields
 ): Booking {
   assertTransition(booking.status, to);
   const updatedAt = at;
   if (booking.createdAt.getTime() > updatedAt.getTime()) {
     throw new DomainValidationError("createdAt must be <= updatedAt");
   }
+
+  assertCommercialSnapshotInvariants(to, commercial);
 
   const next = freezeBooking({
     ...booking,
@@ -385,6 +444,7 @@ function transition(
         : booking.expiredAt,
     updatedAt,
     version: assertVersion(booking.version + 1),
+    ...cloneCommercialFields(commercial),
   });
 
   assertStatusTimestamps(
@@ -400,41 +460,102 @@ export function requestBookingConfirmation(
   booking: Booking,
   at: Date = new Date()
 ): Booking {
-  return transition(booking, "PENDING_CONFIRMATION", at, {});
+  return transition(
+    booking,
+    "PENDING_CONFIRMATION",
+    at,
+    {},
+    commercialFromBooking(booking)
+  );
 }
 
+/**
+ * PENDING_CONFIRMATION → CONFIRMED.
+ * Requires all four commercial snapshots; freezes them; version +1 once.
+ */
 export function confirmBooking(
   booking: Booking,
+  commercial: CommercialSnapshotsInput,
   at: Date = new Date()
 ): Booking {
-  return transition(booking, "CONFIRMED", at, {
-    confirmedAt: at,
-    cancelledAt: null,
-    expiredAt: null,
-  });
+  if (booking.status !== "PENDING_CONFIRMATION") {
+    throw new InvalidBookingStateTransitionError();
+  }
+  if (
+    booking.priceSnapshot ||
+    booking.policySnapshot ||
+    booking.contactSnapshot ||
+    booking.billingSnapshot ||
+    booking.commercialRevision !== 0
+  ) {
+    throw new CommercialSnapshotImmutableError();
+  }
+
+  let snapshots;
+  try {
+    snapshots = createCommercialSnapshots(commercial);
+  } catch (error) {
+    if (error instanceof DomainValidationError) {
+      throw error;
+    }
+    throw new MissingCommercialSnapshotError();
+  }
+
+  if (
+    !snapshots.priceSnapshot ||
+    !snapshots.policySnapshot ||
+    !snapshots.contactSnapshot ||
+    !snapshots.billingSnapshot
+  ) {
+    throw new MissingCommercialSnapshotError();
+  }
+
+  return transition(
+    booking,
+    "CONFIRMED",
+    at,
+    {
+      confirmedAt: at,
+      cancelledAt: null,
+      expiredAt: null,
+    },
+    commercialFieldsFromBundle(snapshots, 1)
+  );
 }
 
 export function cancelBooking(
   booking: Booking,
   at: Date = new Date()
 ): Booking {
-  return transition(booking, "CANCELLED", at, {
-    cancelledAt: at,
-    // Status-timestamp invariants: confirmedAt only when CONFIRMED.
-    confirmedAt: null,
-    expiredAt: null,
-  });
+  // Preserve commercial snapshots if already confirmed (append-only history readiness).
+  return transition(
+    booking,
+    "CANCELLED",
+    at,
+    {
+      cancelledAt: at,
+      confirmedAt: null,
+      expiredAt: null,
+    },
+    commercialFromBooking(booking)
+  );
 }
 
 export function expireBooking(
   booking: Booking,
   at: Date = new Date()
 ): Booking {
-  return transition(booking, "EXPIRED", at, {
-    expiredAt: at,
-    confirmedAt: null,
-    cancelledAt: null,
-  });
+  return transition(
+    booking,
+    "EXPIRED",
+    at,
+    {
+      expiredAt: at,
+      confirmedAt: null,
+      cancelledAt: null,
+    },
+    commercialFromBooking(booking)
+  );
 }
 
 /** Source is immutable after create — any change attempt is rejected. */
@@ -445,4 +566,25 @@ export function assertBookingSourceUnchanged(
   if (booking.source !== source) {
     throw new DomainValidationError("BookingSource is immutable");
   }
+}
+
+/**
+ * Commercial snapshots cannot be replaced on a confirmed (or post-confirm) Booking.
+ * Future changes require append-only BookingRevision (not implemented in Step 6).
+ */
+export function replaceBookingCommercialSnapshots(
+  booking: Booking,
+  commercial: CommercialSnapshotsInput
+): Booking {
+  void commercial;
+  if (
+    booking.commercialRevision >= 1 ||
+    booking.status === "CONFIRMED" ||
+    (booking.status === "CANCELLED" && booking.priceSnapshot !== null)
+  ) {
+    throw new CommercialSnapshotImmutableError();
+  }
+  throw new DomainValidationError(
+    "Commercial snapshots can only be set during confirmation"
+  );
 }
