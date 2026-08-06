@@ -415,7 +415,11 @@ describe("commercial snapshots — Step 6", () => {
   it("confirms with all snapshots, increments version exactly once, freezes deeply", () => {
     const pending = pendingBooking();
     const input = sampleCommercialInput();
-    const confirmed = confirmBooking(pending, input, new Date("2026-08-02T15:00:00.000Z"));
+    const confirmed = confirmBooking(
+      pending,
+      input,
+      new Date(pending.updatedAt.getTime() + 1)
+    );
 
     expect(confirmed.version).toBe(pending.version + 1);
     expect(confirmed.status).toBe("CONFIRMED");

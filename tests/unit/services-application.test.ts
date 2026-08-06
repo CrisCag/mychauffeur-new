@@ -251,7 +251,7 @@ describe("generateServiceFromConfirmedBooking — Application", () => {
     const confirmed = buildConfirmedBooking({ tenantId, organizationId });
     const cancelled = cancelBooking(
       confirmed,
-      new Date("2026-08-02T16:00:00.000Z")
+      new Date(confirmed.updatedAt.getTime() + 1)
     );
     await bookingRepo.save(cancelled);
     await expect(
@@ -274,7 +274,7 @@ describe("generateServiceFromConfirmedBooking — Application", () => {
     );
     const expired = expireBooking(
       pending2,
-      new Date("2026-08-02T17:00:00.000Z")
+      new Date(pending2.updatedAt.getTime() + 1)
     );
     await bookingRepo.save(expired);
     await expect(
