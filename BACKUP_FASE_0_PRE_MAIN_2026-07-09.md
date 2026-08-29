@@ -1,6 +1,12 @@
 # Backup Fase 0 — Pre Merge Main
 
+> **HISTORICAL SNAPSHOT** — fotografia del 2026-07-09 (branch `fase-0/stabilizzazione-sicurezza-baseline`).
+> **Non** rappresenta lo stato corrente del repository (OS Foundation, corpus MC-OS, Demo, suite test attuale).
+> Stato corrente: [`HANDOFF.md`](HANDOFF.md) · [`PLATFORM_MAP.md`](PLATFORM_MAP.md) · [`README.md`](README.md).
+
 Data: 2026-07-09
+
+**Documentazione correlata (corrente):** [`docs/MASTER_BLUEPRINT.md`](docs/MASTER_BLUEPRINT.md) · [`PLATFORM_MAP.md`](PLATFORM_MAP.md) · [`HANDOFF.md`](HANDOFF.md)
 
 ## Branch salvato
 

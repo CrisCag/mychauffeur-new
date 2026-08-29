@@ -1,9 +1,19 @@
 # Motore tariffario NCC — requisiti di prodotto
 
-Documento allegato a `PLATFORM_MAP.md`.  
-**Stato:** requisiti ufficiali — **non implementati** nel codice (salvo voci esplicitamente marcate come parziali).
+Documento allegato a [`PLATFORM_MAP.md`](../PLATFORM_MAP.md).
+Indice architetturale: [`MASTER_BLUEPRINT.md`](./MASTER_BLUEPRINT.md).
 
-Ultimo aggiornamento: 2026-07-07
+| Campo | Valore |
+|-------|--------|
+| Ruolo | **Requirements / business input** (MC-OS-003 prenotato in EDGF) |
+| Non è | Pricing Engine Domain definitivo, né Source of Truth architetturale Pricing |
+| Distinzione | Framework Pricing OS: [`PRICING_AND_REVENUE_MANAGEMENT_FRAMEWORK.md`](./PRICING_AND_REVENUE_MANAGEMENT_FRAMEWORK.md) (**MC-OS-017**) |
+| Stato | Requisiti ufficiali — **non** implementati come motore NCC completo (salvo voci parziali legacy sotto) |
+
+**Stato:** requisiti ufficiali — **non implementati** nel codice Domain Foundation (salvo voci esplicitamente marcate come parziali nel pricing **legacy** `lib/platform/*`).
+Non inventare tariffe, IVA, commissioni o policy non già presenti in questo documento.
+
+Ultimo aggiornamento documentale: **2026-08-29** (classificazione / cross-reference; contenuto requisiti invariato).
 
 ---
 
@@ -82,14 +92,14 @@ Per ogni regola: **priorità**, **dipendenze**, **note**.
 
 ## 5. Fasi di implementazione consigliate (solo prodotto)
 
-1. **Fase 3 roadmap** — documentare matrice in admin; minimo servizio + notturno/festivo su transfer base  
-2. **Post-pagamenti** — pass-through pedaggi/ZTL/parcheggi su settlement  
-3. **Partner** — commissioni e costo assegnato per contratto  
+1. **Fase 3 roadmap** — documentare matrice in admin; minimo servizio + notturno/festivo su transfer base
+2. **Post-pagamenti** — pass-through pedaggi/ZTL/parcheggi su settlement
+3. **Partner** — commissioni e costo assegnato per contratto
 
 ---
 
 ## 6. Incertezze da risolvere (vedi `docs/DECISIONS_PENDING.md`)
 
-- Policy acconto e cancellazione vs penali attesa  
-- Commissione piattaforma default su B2C vs B2B  
+- Policy acconto e cancellazione vs penali attesa
+- Commissione piattaforma default su B2C vs B2B
 - Modello partner (sub-affiliazione vs marketplace puro)

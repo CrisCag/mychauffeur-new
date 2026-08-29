@@ -1,12 +1,15 @@
-# Handoff — MyChauffeur.it
+# Handoff — MyChauffeur OS
 
 **Documento di passaggio operativo** per riprendere il lavoro senza reinterpretare il repository.
 
 | Campo | Valore |
 |-------|--------|
-| Ultimo aggiornamento | **2026-07-07** |
-| Fase corrente | **2a avanzata** (booking Daytrip in locale) → prossima: **Fase 0** (stabilizzazione) |
-| Riferimenti | [`PLATFORM_MAP.md`](PLATFORM_MAP.md) · [`docs/NCC_TARIFF_REQUIREMENTS.md`](docs/NCC_TARIFF_REQUIREMENTS.md) · [`docs/DECISIONS_PENDING.md`](docs/DECISIONS_PENDING.md) |
+| Ultimo aggiornamento | **2026-08-29** |
+| Branch corrente | `os-foundation/identity-tenant-booking` |
+| Checkpoint remoto (codice) | `c2a571e` — Foundation + Demo già pushati su `origin` |
+| Docs operational alignment | Completato in locale; in attesa di push approvato (pre-push review) |
+| Nature | **Dual-track:** OS Foundation + legacy product surface + Founder Demo |
+| Riferimenti | [`docs/MASTER_BLUEPRINT.md`](docs/MASTER_BLUEPRINT.md) · [`PLATFORM_MAP.md`](PLATFORM_MAP.md) · [`docs/ARCHITECTURE_BASELINE_FREEZE_V1.md`](docs/ARCHITECTURE_BASELINE_FREEZE_V1.md) · [`docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md`](docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md) · [`docs/DECISIONS_PENDING.md`](docs/DECISIONS_PENDING.md) · [`docs/NCC_TARIFF_REQUIREMENTS.md`](docs/NCC_TARIFF_REQUIREMENTS.md) · [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) |
 
 Aggiornare questo file dopo ogni sessione significativa o su comando **mi fermo**.
 
@@ -16,242 +19,195 @@ Aggiornare questo file dopo ogni sessione significativa o su comando **mi fermo*
 
 ```bash
 cd ~/progetti/mychauffeur-new
+git checkout os-foundation/identity-tenant-booking
+git status --branch --short
+npm run test:run
 npm run dev
-# → http://127.0.0.1:3002/it
+# → http://127.0.0.1:3002/it  (o porta Next)
+# Demo (non-prod): /it/demo  e  /it/demo/ops
 ```
 
-- **Repo attivo:** `mychauffeur-new` — non lavorare in `daytrip-clone` senza ordine esplicito  
-- **`.env.local`:** `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, `GOOGLE_MAPS_API_KEY` (stessa chiave); SMTP opzionale  
-- **Cookie funzionali:** necessari per mappa Google e autocomplete  
-- **Supabase:** progetto MyChauffeurUmbria in pausa — in dev prevale **JSON** in `data/`
+- **Repo attivo:** `mychauffeur-new` — non lavorare in `daytrip-clone` senza ordine esplicito
+- **`.env.local`:** Maps keys per funnel legacy; SMTP opzionale — **non** commitare secrets
+- **Supabase / Foundation SQL:** migration **file** presenti; applicazione su DB **non verificata** in questo handoff — non applicare senza piano esplicito
 
 ---
 
-## 1. Stato reale del progetto
-
-**Next.js full-stack** (App Router, React 19, TypeScript): frontend e backend nello stesso repo (`app/`, `app/api/`, `lib/`).
+## 1. Stato reale (2026-08-29)
 
 | Area | Stato |
 |------|--------|
-| Sito marketing IT/EN | Operativo |
-| Funnel booking + preventivo | Operativo in locale (homepage → `/book` → invio richiesta) |
-| Google Places (autocomplete server) | Operativo con chiave + cookie |
-| Geocoding / Directions / mappa | Operativo (route preview, calcolo km) |
-| Motore prezzi attuale | Operativo — modello **Daytrip semplificato** (base + km + soste + attesa fermate + moltiplicatore veicolo + VIP 18%) |
-| POI | Statici + fallback Supabase limitato; **senza** filtro “sul percorso” |
-| Portale driver | MVP web (`/it/driver`) — **senza login** |
-| Persistenza | **JSON** in `data/`; Supabase **opzionale** (quote se configurato) |
-| Auth / RLS / admin | **Assenti** |
-| Pagamenti | **Assenti** (solo testo informativo in UI) |
-| Test automatici | **Assenti** |
+| **OS Foundation Domain** | Implementato in `lib/modules/` (in-memory + test): organizations, identity (+ authz), bookings (+ commercial snapshots), quotes, customers, services |
+| **Founder Demo Vertical Slice** | Presente, gated off in production; Quote → Booking CONFIRMED → Service |
+| **Corpus MC-OS** | Documentazione consolidata (registro EDGF fino a MC-OS-032; Baseline B001 = MC-OS-025) |
+| **Migration SQL** | 9 file in `supabase/migrations/` (1 legacy trip-ops + 8 Foundation) — **file versionati ≠ applicati** |
+| **Test automatici** | Vitest: suite corrente **355** test / **52** file (`npm run test:run`) |
+| Sito marketing IT/EN | Operativo (legacy surface) |
+| Funnel `/book` + preventivo Daytrip | Operativo in locale (legacy; JSON + API) |
+| Auth production / RLS / admin UI | **Assenti** come prodotto esposto (Foundation identity/authz esistono come Domain, non come login UI) |
+| Pagamenti / Dispatch / Assignment / Support | **Non implementati** in codice Domain (docs: MC-OS-030/031 e DECISIONS_PENDING) |
+| Persistenza production Foundation | **Assente** — Domain usa repository in-memory |
+
+### Checkpoint Git rilevanti
+
+```
+c2a571e feat(demo): add founder vertical slice
+8eba60b docs(architecture): consolidate foundation framework corpus
+013ac30 test(domain): remove remaining wall-clock dependencies
+2f2a977 feat(services): add service foundation
+82a7243 feat(customers): add customer foundation
+5dbdae1 feat(quotes): add quote foundation
+0885b4c feat(bookings): add commercial snapshots
+c56a0d7 feat(bookings): add booking foundation aggregate
+```
 
 ---
 
-## 2. Cosa è operativo, MVP o mancante
+## 2. Cosa è Foundation vs Legacy vs Demo vs “solo docs”
 
-### ✅ Operativo (puoi usarlo / testarlo)
+### FOUNDATION (codice Domain)
 
-- Widget prenotazione homepage, autocomplete indirizzi, calcolo preventivo  
-- `/book`: fermate (catalogo + custom), veicolo, contatto, mappa, riepilogo laterale  
-- Salvataggio richiesta in `data/booking-requests.json` + email se SMTP  
-- VIP No Rush, ritorno, B2B → email partners  
+| Modulo | Path | Note |
+|--------|------|------|
+| Organizations | `lib/modules/organizations` | Tenant/org aggregate |
+| Identity + membership/roles/permissions | `lib/modules/identity` | Incl. authorization engine |
+| Bookings + commercial snapshots | `lib/modules/bookings` | Confirm freeze snapshots |
+| Quotes | `lib/modules/quotes` | Proposal → accept |
+| Customers | `lib/modules/customers` | Customer aggregate |
+| Services | `lib/modules/services` | Generate from confirmed booking |
+| Platform kernel (shared) | `lib/modules/platform` | Shared kernel helpers — not product UI |
 
-### 🟡 MVP incompleto (non considerare “production-ready”)
+### LEGACY (prodotto attuale sito/API)
 
-- Portale autista — API `trip-ops` aperte, `DEFAULT_DRIVER_ID`  
-- Timer attesa — logica in codice; DB migration non applicata in dev  
-- POI suggeriti — nessun filtro rotta Daytrip  
-- Quote Supabase — solo se env configurato  
-- Allineamento veicoli homepage (`other`) vs book (`luxury`)  
+| Area | Path tipici |
+|------|-------------|
+| Booking funnel | `app/[locale]/book`, `components/booking/*`, `app/api/booking` |
+| Pricing Daytrip | `lib/platform/trip-pricing.ts`, `app/api/trips/calculate` |
+| Trip ops / driver MVP | `lib/platform/trip-ops-store.ts`, `app/[locale]/driver`, `app/api/trip-ops*` |
+| Runtime JSON | `data/*.json` (non SoT Foundation) |
 
-### ❌ Non ancora sviluppato
+### Legacy implementation entry points
 
-- Login (admin, dispatcher, driver, partner)  
-- `app/admin/` gestionale  
-- Pagamenti / webhook / rimborsi  
-- Dispatch (coda, offerte, accept/reject)  
-- Portale partner  
-- Motore tariffario NCC completo (vedi allegato NCC)  
-- Test, logging centralizzato, RLS  
+> **LEGACY only** — non OS Foundation. Path verificati nel repository (navigazione rapida per sviluppo sul prodotto attuale).
 
-Dettaglio tabellare: `PLATFORM_MAP.md` → sezione **Cosa esiste oggi**.
+| Entry | Path | Ruolo |
+|-------|------|-------|
+| Widget homepage | `components/sections/booking-widget.tsx` | Ingresso al funnel |
+| Pagina `/book` | `app/[locale]/book/page.tsx` | Funnel 3 step |
+| UI funnel | `components/booking/book-flow-client.tsx` | Logica client principale |
+| Stato sessione | `lib/booking-flow-storage.ts` | `sessionStorage` funnel |
+| API booking | `app/api/booking/route.ts` | Invio richiesta |
+| Persistenza richieste | `lib/booking-requests.ts` | Writer JSON legacy |
+| API preventivo | `app/api/trips/calculate/route.ts` | Calcolo prezzi |
+| Motore prezzi | `lib/platform/trip-pricing.ts` | Pricing Daytrip |
+| API trip-ops | `app/api/trip-ops/route.ts`, `app/api/trip-ops/[id]/route.ts` | Operazioni autista |
+| Store trip-ops | `lib/platform/trip-ops-store.ts` | Persistenza JSON corse |
+| Portale driver | `app/[locale]/driver/page.tsx` | UI autista MVP |
+| API POI | `app/api/points-of-interest/route.ts` | Fermate suggerite |
+| Dati POI | `lib/platform/static-pois.ts`, `lib/platform/poi-query.ts` | Catalogo/query POI |
+| i18n | `lib/i18n-config.ts`, `messages/it.ts`, `messages/en.ts` | Stringhe IT/EN |
+| Config JSON dev | `data/wait-time-rates.json`, `data/comfort-mode-config.json` | Tariffe attesa / VIP (vedi `data/README.md`) |
 
----
+### DEMO
 
-## 3. Architettura — file da conoscere prima di toccare codice
+| Area | Path |
+|------|------|
+| Routes | `app/[locale]/demo/**` |
+| Composition | `lib/demo/**` |
+| UI | `components/demo/**` |
+| Tests | `tests/unit/demo-*.ts` |
 
-### Booking (flusso cliente)
+### DOCUMENTATO ma NON implementato (Domain)
 
-| Ruolo | Percorso |
-|-------|----------|
-| Widget homepage | `components/sections/booking-widget.tsx` |
-| Funnel 3 step | `components/booking/book-flow-client.tsx` (~970 righe — fragile) |
-| Stato sessione | `lib/booking-flow-storage.ts` (sessionStorage) |
-| Riepilogo UI | `components/booking/booking-summary-panel.tsx` |
-| Autocomplete | `components/booking/address-autocomplete.tsx` |
-| Mappa | `components/booking/trip-route-map.tsx` |
-| Pagina | `app/[locale]/book/page.tsx` |
-| Invio richiesta | `app/api/booking/route.ts` |
-| Persistenza richieste | `lib/booking-requests.ts` → `data/booking-requests.json` |
-
-### Pricing
-
-| Ruolo | Percorso |
-|-------|----------|
-| Motore principale | `lib/platform/trip-pricing.ts` |
-| Calcolo API | `app/api/trips/calculate/route.ts` |
-| Geocoding / distanza | `lib/platform/pricing-engine.ts` |
-| Attesa fermate | `lib/platform/wait-time-pricing.ts`, `data/wait-time-rates.json` |
-| VIP | `lib/platform/comfort-mode.ts`, `data/comfort-mode-config.json` |
-| Moltiplicatori veicolo | `lib/platform/vehicle-pricing-multipliers.ts` |
-| Tipi | `types/trip.ts` |
-
-### API (tutte in `app/api/`)
-
-`trips/calculate` · `booking` · `points-of-interest` · `route-preview` · `places/autocomplete` · `places/details` · `wait-time-rates` · `comfort-mode` · `trip-ops` · `trip-ops/[id]`
-
-### Persistenza JSON
-
-| File | Contenuto |
-|------|-----------|
-| `data/booking-requests.json` | Richieste prenotazione |
-| `data/operational-trips.json` | Corse operative + wait + GPS |
-| `data/wait-time-rates.json` | Tariffe attesa fermate |
-| `data/comfort-mode-config.json` | Markup VIP |
-
-### Supabase
-
-| Ruolo | Percorso |
-|-------|----------|
-| Client admin | `lib/platform/supabase-admin.ts` |
-| Quote (se DB ok) | `lib/platform/quotes.ts` |
-| Migration trip-ops (repo) | `supabase/migrations/202606240001_trip_ops_driver_client.sql` |
-| Note | `supabase/README.md` |
-
-**Incertezza:** tabelle `quotes`, `pricing_rules`, `points_of_interest` usate nel codice ma **non** nel file migration del repo — possono esistere già su Supabase dopo restore.
-
-### Portale driver
-
-`app/[locale]/driver/` · `components/driver/*` · `lib/platform/trip-ops-store.ts` · `lib/platform/trip-status-machine.ts` · `lib/platform/wait-timer.ts`
-
-### i18n
-
-`lib/i18n-config.ts` (solo `it`, `en`) · `messages/it.ts` · `messages/en.ts` · `messages/types.ts` — **ogni nuova stringa va in tutti e tre**
-
-### POI
-
-`lib/platform/static-pois.ts` · `lib/platform/poi-query.ts` · `app/api/points-of-interest/route.ts`
-
-### Trip operations
-
-`lib/platform/trip-ops-store.ts` · `app/api/trip-ops/*` · `types/trip-ops.ts`
-
-### Altro
-
-- Redirect legacy: `proxy.ts`  
-- Backup locale: `scripts/backup-project.sh`  
-- Archivio import: `~/progetti/daytrip-clone` (non cancellare)
+Dispatch/Assignment engine (MC-OS-030), Support (MC-OS-031), Payment/Settlement runtime, Notification providers, Pricing NCC completo (requisiti in MC-OS-003 / MC-OS-017 — **non** engine definitivo).
 
 ---
 
-## 4. Regole operative obbligatorie (prossime modifiche)
+## 3. Guardrail (obbligatori)
 
-1. **Analisi read-only** — leggere file coinvolti e `PLATFORM_MAP.md` prima di editare  
-2. **Piano** — per pricing, booking, auth, DB, pagamenti: piano scritto e approvazione  
-3. **Branch Git dedicato** — es. `feature/fase-0-tests`, non lavorare feature grandi su `main` senza accordo  
-4. **Milestone** — una capability per volta; evitare refactor multipli nella stessa PR  
-5. **Build e test** — `npm run build` dopo ogni milestone; introdurre test in Fase 0  
-6. **Commit** — piccoli, descrittivi; push solo se richiesto o su **mi fermo**  
-7. **Documentazione** — nessuna modifica strutturale a **pricing**, **booking**, **auth**, **database** o **pagamenti** senza aggiornare `PLATFORM_MAP.md` e allegati correlati  
-8. **Decisioni** — non implementare voci in `docs/DECISIONS_PENDING.md` marcate “blocca” finché non approvate  
+1. **Non** mescolare commit Foundation Domain con docs delivery o Demo senza separazione consapevole.
+2. **Non** applicare migration Foundation su DB production/Umbria senza piano e decisione esplicita.
+3. **Non** dichiarare Demo come prodotto cliente; gate `NODE_ENV !== "production"`.
+4. **Non** chiudere ADR-OPEN o decisioni in `DECISIONS_PENDING` senza titolare.
+5. **Non** riusare **MC-OS-010** (riservato); indice ADR = **MC-OS-024**.
+6. Ownership: **MC-OS-014** lifecycle ≠ **MC-OS-032** commercial booking; **MC-OS-015** identity governance ≠ **MC-OS-029** permission catalog.
+7. Legacy JSON / `lib/platform` **non** sono Source of Truth del Domain OS.
+8. Deny by Default, Tenant Isolation, Modular Monolith (CANDIDATE) — rispettare B001 / MC-OS-026.
 
-### Tu (proprietario)
+### Cosa NON fare senza decisione architetturale
 
-| Quando | Azione |
-|--------|--------|
-| Avvio sessione | Apri `mychauffeur-new` in Cursor; leggi questo file |
-| Test locale | `npm run dev` → http://127.0.0.1:3002/it |
-| Decisioni prodotto | Approva righe in `docs/DECISIONS_PENDING.md` |
-| Stop | Scrivi **mi fermo** → commit/backup secondo protocollo in `PLATFORM_MAP.md` |
-
-### Agente
-
-- Segue fasi in `PLATFORM_MAP.md`  
-- Non tocca `daytrip-clone` senza ordine  
-- Aggiorna `HANDOFF.md` + checkpoint in `PLATFORM_MAP.md` a fine sessione significativa  
+- Scegliere provider pagamenti / email / SMS
+- Introdurre microservices come default
+- AI autonoma su Ledger, Payment, Permission, Safety
+- Sostituire funnel `/book` con Demo in production
+- Merge Foundation persistence su Supabase “al volo”
 
 ---
 
-## 5. Roadmap (stato sintetico)
+## 4. Prossimi passi raccomandati
 
-| Fase | Obiettivo | Stato |
-|------|-----------|--------|
-| **0** | Stabilizzazione: doc, test unit/API, smoke booking, protezione `trip-ops`, backup/Git | **In corso** (doc ✅; test ❌) |
-| **1** | Supabase SSOT; tabelle booking/quote/POI/ops; migrazione JSON | Non iniziata |
-| **2** | Auth, ruoli, RLS, middleware, login driver, `app/admin/` minimo | Non iniziata |
-| **3** | Pagamenti + motore tariffario NCC completo | Non iniziata |
-| **4** | Driver/partner/dispatch avanzato (scope partner da confermare) | Non iniziata |
-| **5** | Lingue extra, SMS/email auto, app mobile, integrazioni | Non iniziata |
-
-**Nota:** il booking Daytrip (ex “Fase 2a”) è avanzato in locale ma **non** sostituisce Fase 0–1 per produzione.
+1. Mantenere docs delivery allineate (questo handoff / PLATFORM_MAP) dopo ogni milestone.
+2. Decidere il **prossimo Step Domain** (es. Dispatch foundation **oppure** persistenza Supabase Foundation in ambiente dedicato) — non entrambi nello stesso commit senza piano.
+3. Continuare a **non** applicare migration finché non c’è ambiente e checklist.
+4. Tenere Demo separata; non espandere verso Payment/GPS/Assignment reali nella demo.
+5. Product OPEN in [`docs/DECISIONS_PENDING.md`](docs/DECISIONS_PENDING.md); arch OPEN in MC-OS-024.
 
 ---
 
-## 6. Decisioni ancora aperte
+## 5. File da conoscere
 
-Elenco completo: [`docs/DECISIONS_PENDING.md`](docs/DECISIONS_PENDING.md)
+### Foundation
 
-| Tema | Blocca |
-|------|--------|
-| Provider pagamenti | Fase 3 |
-| Acconto, saldo, cancellazioni, rimborsi | Checkout / termini |
-| Modello partner NCC | Fase 4 |
-| Regole tariffarie NCC (quali al go-live) | Fase 3 |
-| Commissioni piattaforma / partner | Settlement |
-| Notifiche (email/SMS/push) | Dispatch / driver |
-| Criteri assegnazione corse | Fase 4 |
-| Lingue (solo IT/EN vs altre) | Fase 5 / go-live |
-| Criteri go-live (MVP produzione) | Deploy |
+`lib/modules/{organizations,identity,bookings,quotes,customers,services}/**`
+`supabase/migrations/20260726*.sql`, `20260731*.sql`, `20260802*.sql`
+`tests/unit/*` (domain, contract, fitness, migration static, demo)
 
-Tariffa NCC dettagliata: [`docs/NCC_TARIFF_REQUIREMENTS.md`](docs/NCC_TARIFF_REQUIREMENTS.md).
+### Demo
+
+`lib/demo/**` · `components/demo/**` · `app/[locale]/demo/**`
+
+### Legacy
+
+`lib/platform/**` · `app/api/**` · `components/booking/**` · `data/**`
+
+### Docs SoT
+
+`docs/DOCUMENTATION_MANAGEMENT_FRAMEWORK.md` · `docs/MASTER_BLUEPRINT.md` · `docs/ARCHITECTURE_BASELINE_FREEZE_V1.md` · `docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md`
 
 ---
 
-## 7. Prossimo passo tecnico consigliato (Fase 0)
+## 6. Storia precedente (non stato corrente)
 
-Ordine suggerito — **senza saltare a auth o pagamenti**:
-
-1. **Verifica Git (read-only)** — `git status`, `git log -5`; capire cosa è committato vs working tree  
-2. **Inventario API esposte** — confermare le 10 route in `app/api/`; documentare quali sono pubbliche  
-3. **Inventario JSON** — `data/*.json`; backup con `./scripts/backup-project.sh`  
-4. **Test minimi** — Vitest (o equivalente): `trip-pricing.ts`, `wait-time-pricing.ts`; integration su `POST /api/trips/calculate` e `POST /api/booking`  
-5. **Smoke booking** — script o Playwright: homepage → `/book` → submit  
-6. **Sicurezza minima** — in produzione: disabilitare o proteggere ` /api/trip-ops*` finché non c’è auth  
-7. **Aggiornare** `HANDOFF.md` checkpoint dopo la milestone  
+Prima del branch Foundation, il handoff descriveva soprattutto Fase 0/2a legacy (booking Daytrip, JSON, assenza test). Quella fotografia è **superata** per Foundation/test/docs; resta utile solo come contesto del prodotto legacy. Snapshot storico Fase 0: [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](BACKUP_FASE_0_PRE_MAIN_2026-07-09.md).
 
 ---
 
 ## Protocollo «mi fermo»
 
-Vedi [`PLATFORM_MAP.md`](PLATFORM_MAP.md) → sezione omonima (commit checkpoint, backup, aggiornamento checkpoint).
+Vedi [`PLATFORM_MAP.md`](PLATFORM_MAP.md) → sezione omonima.
 
 ---
 
 ## Checkpoint sessione
 
-| Data | Fase | Commit | Note |
-|------|------|--------|------|
-| 2026-07-07 | Doc | — | `HANDOFF` allineato a `PLATFORM_MAP` + allegati |
-| 2026-07-07 | Doc | — | `PLATFORM_MAP` riscritto |
-| 2026-06-24 | 0 | `4b57e9a` | Push GitHub iniziale |
-
-*Aggiornare la riga sopra a ogni handoff.*
+| Data | Fase | Commit / stato | Note |
+|------|------|----------------|------|
+| 2026-08-29 | Docs ops | Completato in locale; in attesa di push approvato | Allineamento documentazione operativa (HANDOFF/PLATFORM_MAP/README). Checkpoint remoto codice resta `c2a571e`. |
+| 2026-08-06 | Demo | `c2a571e` (remoto) | Founder vertical slice pushato |
+| 2026-08-06 | Docs | `8eba60b` | Corpus framework MC-OS consolidato |
+| 2026-08-02 | Foundation | `2f2a977` … `c56a0d7` | Bookings → Services |
+| 2026-07-09 | Historical | tag `backup/fase-0-…` | Vedi BACKUP_FASE_0 |
+| 2026-07-07 | Legacy doc | — | HANDOFF precedente (stale rispetto a Foundation) |
 
 ---
 
 ## Link utili
 
-- Repo: https://github.com/CrisCag/mychauffeur-new  
-- Path locale: `/Users/cristiancagnoni/progetti/mychauffeur-new`  
-- Template env: `.env.example`  
-- README setup Maps: `README.md`
+- Master Blueprint: [`docs/MASTER_BLUEPRINT.md`](docs/MASTER_BLUEPRINT.md)
+- Baseline B001: [`docs/ARCHITECTURE_BASELINE_FREEZE_V1.md`](docs/ARCHITECTURE_BASELINE_FREEZE_V1.md)
+- ADR Index: [`docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md`](docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md)
+- Platform Map: [`PLATFORM_MAP.md`](PLATFORM_MAP.md)
+- README entry: [`README.md`](README.md)
+- Repo: https://github.com/CrisCag/mychauffeur-new
+- Path locale: `/Users/cristiancagnoni/progetti/mychauffeur-new`
+- Template env: `.env.example`
