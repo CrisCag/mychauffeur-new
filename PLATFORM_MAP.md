@@ -292,7 +292,7 @@ Protezioni baseline (gitignore dati, trip-ops prod guard, rate limit, booking ha
 
 | Data | Fase | Commit | Note |
 |------|------|--------|------|
-| 2026-08-29 | Docs ops | *local pending* | PLATFORM_MAP allineata a Foundation/Demo |
+| 2026-08-29 | Docs ops | `99521f6` | Docs operative pubblicate; locale/remoto allineati (`0 / 0`) |
 | 2026-08-06 | Demo | `c2a571e` | Founder vertical slice |
 | 2026-08-06 | Docs corpus | `8eba60b` | Framework MC-OS |
 | 2026-08-02 | Foundation | `2f2a977`…`c56a0d7` | Services ← Bookings |

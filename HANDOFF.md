@@ -7,7 +7,7 @@
 | Ultimo aggiornamento | **2026-08-29** |
 | Branch corrente | `os-foundation/identity-tenant-booking` |
 | Checkpoint remoto (codice) | `c2a571e` — Foundation + Demo già pushati su `origin` |
-| Docs operational alignment | Completato in locale; in attesa di push approvato (pre-push review) |
+| Docs operational alignment | Pubblicato come `99521f6` su `origin`; locale e remoto allineati (`0 / 0`) |
 | Nature | **Dual-track:** OS Foundation + legacy product surface + Founder Demo |
 | Riferimenti | [`docs/MASTER_BLUEPRINT.md`](docs/MASTER_BLUEPRINT.md) · [`PLATFORM_MAP.md`](PLATFORM_MAP.md) · [`docs/ARCHITECTURE_BASELINE_FREEZE_V1.md`](docs/ARCHITECTURE_BASELINE_FREEZE_V1.md) · [`docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md`](docs/ARCHITECTURE_DECISION_RECORDS_INDEX.md) · [`docs/DECISIONS_PENDING.md`](docs/DECISIONS_PENDING.md) · [`docs/NCC_TARIFF_REQUIREMENTS.md`](docs/NCC_TARIFF_REQUIREMENTS.md) · [`BACKUP_FASE_0_PRE_MAIN_2026-07-09.md`](BACKUP_FASE_0_PRE_MAIN_2026-07-09.md) |
 
@@ -192,7 +192,7 @@ Vedi [`PLATFORM_MAP.md`](PLATFORM_MAP.md) → sezione omonima.
 
 | Data | Fase | Commit / stato | Note |
 |------|------|----------------|------|
-| 2026-08-29 | Docs ops | Completato in locale; in attesa di push approvato | Allineamento documentazione operativa (HANDOFF/PLATFORM_MAP/README). Checkpoint remoto codice resta `c2a571e`. |
+| 2026-08-29 | Docs ops | `99521f6` (remoto) | Allineamento documentazione operativa pubblicato; locale/remoto allineati (`0 / 0`) |
 | 2026-08-06 | Demo | `c2a571e` (remoto) | Founder vertical slice pushato |
 | 2026-08-06 | Docs | `8eba60b` | Corpus framework MC-OS consolidato |
 | 2026-08-02 | Foundation | `2f2a977` … `c56a0d7` | Bookings → Services |
