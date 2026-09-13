@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 type SilhouetteProps = {
   className?: string;
   title: string;
+  description: string;
 };
 
 /** Original decorative sedan profile — no brand marks or specific models. */
-export function SedanSilhouette({ className, title }: SilhouetteProps) {
+export function SedanSilhouette({ className, title, description }: SilhouetteProps) {
   return (
     <svg
       viewBox="0 0 320 120"
@@ -15,9 +16,7 @@ export function SedanSilhouette({ className, title }: SilhouetteProps) {
       className={cn("h-auto w-full", className)}
     >
       <title>{title}</title>
-      <desc>
-        Illustrazione stilizzata di una berlina premium in profilo laterale.
-      </desc>
+      <desc>{description}</desc>
       <defs>
         <linearGradient id="demoSedanBody" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="oklch(0.32 0.03 265)" />
@@ -83,7 +82,7 @@ export function SedanSilhouette({ className, title }: SilhouetteProps) {
 }
 
 /** Original decorative van profile — no brand marks or specific models. */
-export function VanSilhouette({ className, title }: SilhouetteProps) {
+export function VanSilhouette({ className, title, description }: SilhouetteProps) {
   return (
     <svg
       viewBox="0 0 320 120"
@@ -92,9 +91,7 @@ export function VanSilhouette({ className, title }: SilhouetteProps) {
       className={cn("h-auto w-full", className)}
     >
       <title>{title}</title>
-      <desc>
-        Illustrazione stilizzata di un van premium in profilo laterale.
-      </desc>
+      <desc>{description}</desc>
       <defs>
         <linearGradient id="demoVanBody" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="oklch(0.34 0.03 265)" />

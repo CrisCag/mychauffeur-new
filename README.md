@@ -109,7 +109,9 @@ npm run dev
 # or yarn / pnpm / bun
 ```
 
-Open [http://localhost:3000](http://localhost:3000) (or the port shown by Next; local ops often use **3002**).
+`npm run dev` runs `scripts/dev-local.sh`, which raises this process soft file-descriptor limit (`ulimit -S`) **only when it is below 10240**, then starts Next on **127.0.0.1:3002**. It does not change `launchctl` / system-wide maxfiles, and it does not lower an already-high soft limit. On macOS the system soft limit is often **256**, which can trigger Turbopack `EMFILE` (blank 404s). Prefer `npm run dev` over `dev:raw` locally. If the hard limit was previously capped (e.g. `ulimit -n 256` without `-S`), raise may fail — run `ulimit -n 10240` once in that shell, then `npm run dev`. `dev:raw` starts Next on the same host/port without touching ulimit.
+
+Open [http://127.0.0.1:3002](http://127.0.0.1:3002) (or the port shown by Next).
 
 Quality checks:
 

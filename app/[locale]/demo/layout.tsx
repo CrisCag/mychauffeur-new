@@ -30,10 +30,10 @@ export default async function DemoLayout({
   const { locale } = await params;
 
   return (
-    <div className="min-h-[70vh] bg-[radial-gradient(ellipse_at_top,oklch(0.22_0.02_265)_0%,transparent_55%)]">
-      <DemoBanner />
+    <div className="flex min-h-svh flex-col bg-[radial-gradient(ellipse_at_top,oklch(0.22_0.02_265)_0%,transparent_55%)]">
+      <DemoBanner locale={locale} />
       <DemoSubheader locale={locale} />
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
         {children}
       </div>
     </div>

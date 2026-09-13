@@ -16,27 +16,17 @@ import {
 } from "@/lib/demo/actions";
 import type { DemoBookingDetailDto } from "@/lib/demo/dto";
 import {
-  DEMO_PRICE_DISCLAIMER_IT,
-  DEMO_VEHICLE_PRESENTATION,
-  demoAuditEventLabelIt,
-  demoBookingStatusLabelIt,
-  demoCancellationReasonLabelIt,
-  demoServiceStatusLabelIt,
-  isDemoVehicleCategory,
-} from "@/lib/demo";
+  demoActionMessage,
+  demoAuditEventLabel,
+  demoBookingStatusLabel,
+  demoCancellationReasonLabel,
+  demoServiceStatusLabel,
+  demoVehicleTitle,
+  formatDemoEuro,
+  formatDemoPickup,
+  getDemoCopy,
+} from "@/lib/demo/labels";
 import { Button } from "@/components/ui/button";
-
-function formatEuro(minor: number, currency: string): string {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency,
-  }).format(minor / 100);
-}
-
-function vehicleTitle(category: string): string {
-  if (!isDemoVehicleCategory(category)) return category;
-  return DEMO_VEHICLE_PRESENTATION[category].titleIt;
-}
 
 export function DemoOpsDetailClient({
   locale,
@@ -45,33 +35,45 @@ export function DemoOpsDetailClient({
   locale: string;
   bookingId: string;
 }) {
+  const copy = getDemoCopy(locale);
   const [detail, setDetail] = useState<DemoBookingDetailDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     startTransition(async () => {
       const res = await actionGetDemoBookingDetail(bookingId);
       if (!res.ok) {
-        setError(res.messageIt);
+        setError(demoActionMessage(res, locale));
+        setLoaded(true);
         return;
       }
       setDetail(res.data);
       if (!res.data) {
-        setError("Booking demo non trovato in questo scope.");
+        setError(copy.notFound);
       }
+      setLoaded(true);
     });
-  }, [bookingId]);
+  }, [bookingId, copy.notFound, locale]);
 
   function reload() {
     startTransition(async () => {
       const res = await actionGetDemoBookingDetail(bookingId);
       if (!res.ok) {
-        setError(res.messageIt);
+        setError(demoActionMessage(res, locale));
         return;
       }
       setDetail(res.data);
     });
+  }
+
+  if (!loaded && !detail) {
+    return (
+      <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+        {copy.loading}
+      </p>
+    );
   }
 
   if (error && !detail) {
@@ -81,14 +83,14 @@ export function DemoOpsDetailClient({
           {error}
         </p>
         <Button asChild variant="secondary">
-          <Link href={`/${locale}/demo/ops`}>Torna a Operazioni</Link>
+          <Link href={`/${locale}/demo/ops`}>{copy.backToOps}</Link>
         </Button>
       </div>
     );
   }
 
   if (!detail) {
-    return <p className="text-sm text-muted-foreground">Caricamento…</p>;
+    return <p className="text-sm text-muted-foreground">{copy.loading}</p>;
   }
 
   const { list } = detail;
@@ -97,17 +99,18 @@ export function DemoOpsDetailClient({
     <div className="space-y-8">
       <header className="space-y-3">
         <Button asChild variant="ghost" size="sm" className="-ml-2">
-          <Link href={`/${locale}/demo/ops`}>← Operazioni</Link>
+          <Link href={`/${locale}/demo/ops`}>{copy.backToOps}</Link>
         </Button>
         <p className="text-xs font-medium tracking-[0.2em] text-primary uppercase">
-          Dettaglio
+          {copy.detailEyebrow}
         </p>
         <h1 className="font-[family-name:var(--font-heading)] text-3xl">
           Booking {list.bookingNumber}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {demoBookingStatusLabelIt(list.bookingStatus)} · Service{" "}
-          {list.serviceNumber} · {demoServiceStatusLabelIt(list.serviceStatus)}
+          {demoBookingStatusLabel(list.bookingStatus, locale)} · Service{" "}
+          {list.serviceNumber} ·{" "}
+          {demoServiceStatusLabel(list.serviceStatus, locale)}
         </p>
       </header>
 
@@ -119,7 +122,7 @@ export function DemoOpsDetailClient({
 
       <section className="grid gap-4 lg:grid-cols-2">
         <DetailCard
-          title="Itinerario"
+          title={copy.cardItinerary}
           icon={<MapPin className="size-4 text-primary" aria-hidden />}
         >
           <p>
@@ -129,59 +132,54 @@ export function DemoOpsDetailClient({
           </p>
         </DetailCard>
         <DetailCard
-          title="Pickup"
+          title={copy.cardPickup}
           icon={<CalendarDays className="size-4 text-primary" aria-hidden />}
         >
-          <p>
-            {new Date(list.scheduledPickupAtIso).toLocaleString("it-IT")}
-          </p>
+          <p>{formatDemoPickup(list.scheduledPickupAtIso, locale)}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Fuso {detail.timezone}
+            {copy.timezoneLabel} {detail.timezone}
           </p>
         </DetailCard>
         <DetailCard
-          title="Veicolo e capacità"
+          title={copy.cardVehicle}
           icon={<CarFront className="size-4 text-primary" aria-hidden />}
         >
-          <p>{vehicleTitle(list.vehicleCategory)}</p>
+          <p>{demoVehicleTitle(list.vehicleCategory, locale)}</p>
           <p className="mt-2 inline-flex items-center gap-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1">
-              <span className="sr-only">Passeggeri:</span>
-              {detail.passengers} passeggeri
+              <span className="sr-only">{copy.passengersLabel}:</span>
+              {detail.passengers} {copy.passengersShort}
             </span>
             <span className="inline-flex items-center gap-1">
               <Briefcase className="size-3.5" aria-hidden />
-              {detail.luggage} bagagli
+              {detail.luggage} {copy.luggageShort}
             </span>
           </p>
         </DetailCard>
         <DetailCard
-          title="Contatto demo"
+          title={copy.cardContact}
           icon={<UserRound className="size-4 text-primary" aria-hidden />}
         >
           <p>{detail.guestDisplayName}</p>
           <p className="mt-1 text-muted-foreground">{detail.guestEmail}</p>
           <p className="text-muted-foreground">{detail.guestPhone}</p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Visibile solo nel dettaglio demo · non in elenco generale
+            {copy.contactDetailOnly}
           </p>
         </DetailCard>
-        <DetailCard title="Prezzo demo" className="lg:col-span-2">
+        <DetailCard title={copy.cardPrice} className="lg:col-span-2">
           <p className="font-[family-name:var(--font-heading)] text-2xl text-primary">
-            {formatEuro(detail.priceTotalMinor, detail.currency)}
+            {formatDemoEuro(detail.priceTotalMinor, locale)}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {DEMO_PRICE_DISCLAIMER_IT} · versione {detail.pricingVersion}
+            {copy.priceDisclaimer} · {detail.pricingVersion}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Policy cancellazione demo: {detail.policyCancellationCode}
+            {copy.cancelPolicy}: {detail.policyCancellationCode}
           </p>
           {detail.cancelReasonCode ? (
             <p className="mt-2 text-sm">
-              Motivo cancellazione:{" "}
-              <span className="text-foreground">
-                {demoCancellationReasonLabelIt(detail.cancelReasonCode)}
-              </span>
+              {demoCancellationReasonLabel(detail.cancelReasonCode, locale)}
               <span className="ml-2 font-mono text-[11px] text-muted-foreground">
                 ({detail.cancelReasonCode})
               </span>
@@ -191,20 +189,23 @@ export function DemoOpsDetailClient({
       </section>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          className="min-h-11"
-          disabled={pending || list.serviceStatus !== "PLANNED"}
-          onClick={() =>
-            startTransition(async () => {
-              const res = await actionMarkDemoServiceReady(list.serviceId);
-              if (!res.ok) setError(res.messageIt);
-              else reload();
-            })
-          }
-        >
-          Segna pronto per assegnazione
-        </Button>
+        {list.serviceStatus === "PLANNED" ? (
+          <Button
+            type="button"
+            className="min-h-11"
+            disabled={pending}
+            aria-busy={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const res = await actionMarkDemoServiceReady(list.serviceId);
+                if (!res.ok) setError(demoActionMessage(res, locale));
+                else reload();
+              })
+            }
+          >
+            {copy.markReadyFull}
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant="outline"
@@ -216,24 +217,22 @@ export function DemoOpsDetailClient({
                 list.serviceId,
                 "OPERATIONAL"
               );
-              if (!res.ok) setError(res.messageIt);
+              if (!res.ok) setError(demoActionMessage(res, locale));
               else reload();
             })
           }
         >
-          Cancella service
+          {copy.cancelService}
         </Button>
       </div>
 
       <section className="rounded-2xl border border-border/60 bg-card/40 p-5">
         <h2 className="font-[family-name:var(--font-heading)] text-xl">
-          Timeline eventi
+          {copy.timelineTitle}
         </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Audit in-memory della sessione demo · nessuna PII negli eventi Domain
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{copy.timelineHint}</p>
         {detail.events.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">Nessun evento.</p>
+          <p className="mt-4 text-sm text-muted-foreground">—</p>
         ) : (
           <ol className="relative mt-5 space-y-0 border-l border-border/60 pl-5">
             {detail.events.map((e, i) => (
@@ -246,12 +245,12 @@ export function DemoOpsDetailClient({
                   aria-hidden
                 />
                 <p className="text-sm text-foreground">
-                  {demoAuditEventLabelIt(e.type)}
+                  {demoAuditEventLabel(e.type, locale)}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {e.source}
                   {e.publicRef ? ` · ${e.publicRef}` : ""} ·{" "}
-                  {new Date(e.occurredAtIso).toLocaleString("it-IT")}
+                  {formatDemoPickup(e.occurredAtIso, locale)}
                 </p>
               </li>
             ))}

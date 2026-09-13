@@ -380,10 +380,20 @@ describe("Founder Demo — essential copy & disclaimers", () => {
       path.join(root, "components/demo/demo-vehicle-picker.tsx"),
       "utf8"
     );
-    expect(flow).toMatch(/Totale per il veicolo|priceTotalLabel/);
-    expect(flow).toMatch(/Non costituisce|DEMO_PRICE_DISCLAIMER/);
-    expect(picker).toMatch(/Business Sedan|DEMO_VEHICLE_PRESENTATION/);
-    expect(picker).toMatch(/Totale per il veicolo|priceTotalLabel/);
+    const copySrc = readFileSync(
+      path.join(root, "lib/demo/copy.ts"),
+      "utf8"
+    );
+    const fixtures = readFileSync(
+      path.join(root, "lib/demo/fixtures.ts"),
+      "utf8"
+    );
+    expect(flow).toMatch(/getDemoCopy|priceTotalLabel/);
+    expect(flow).toMatch(/priceDisclaimer/);
+    expect(copySrc).toMatch(/Non costituisce/);
+    expect(picker).toMatch(/demoVehiclePresentation|getDemoCopy/);
+    expect(picker).toMatch(/priceTotalLabel/);
+    expect(fixtures).toMatch(/Business Sedan/);
   });
 
   it("ops KPIs summarize service statuses", async () => {

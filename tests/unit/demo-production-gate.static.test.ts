@@ -108,18 +108,16 @@ describe("Founder Demo — production gate (static)", () => {
       path.join(REPO, "components/demo/demo-banner.tsx"),
       "utf8"
     );
-    const labels = readFileSync(
-      path.join(REPO, "lib/demo/labels.ts"),
-      "utf8"
-    );
+    const copy = readFileSync(path.join(REPO, "lib/demo/copy.ts"), "utf8");
     const flow = readFileSync(
       path.join(REPO, "components/demo/demo-flow-client.tsx"),
       "utf8"
     );
-    expect(banner).toMatch(/DEMO LOCALE/);
-    expect(banner).toMatch(/Dati fittizi/);
-    expect(banner).toMatch(/Prezzi dimostrativi e non vincolanti/);
-    expect(labels).toMatch(/Il tuo transfer privato/);
-    expect(flow).toMatch(/DEMO_ESSENTIAL_COPY/);
+    expect(banner).toMatch(/getDemoCopy|bannerLocal/);
+    expect(copy).toMatch(/DEMO LOCALE/);
+    expect(copy).toMatch(/Dati fittizi/);
+    expect(copy).toMatch(/Prezzi dimostrativi e non vincolanti/);
+    expect(copy).toMatch(/Il tuo transfer privato/);
+    expect(flow).toMatch(/getDemoCopy/);
   });
 });

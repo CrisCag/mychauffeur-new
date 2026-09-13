@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
-import { WhatsAppFloatingButton } from "@/components/contact/whatsapp-floating-button";
 import { CookieConsentRoot } from "@/components/gdpr/cookie-consent-root";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import { LocaleShell } from "@/components/layout/locale-shell";
 import { SetHtmlLang } from "@/components/set-html-lang";
 import { getDictionary } from "@/lib/get-dictionary";
 import { isLocale, type Locale } from "@/lib/i18n-config";
@@ -110,10 +108,9 @@ export default async function LocaleLayout({
     <NextIntlClientProvider locale={locale} messages={dict as never}>
       <CookieConsentRoot locale={locale} dict={dict}>
         <SetHtmlLang locale={locale} />
-        <SiteHeader locale={locale} dict={dict} />
-        {children}
-        <SiteFooter locale={locale} dict={dict} />
-        <WhatsAppFloatingButton />
+        <LocaleShell locale={locale} dict={dict}>
+          {children}
+        </LocaleShell>
       </CookieConsentRoot>
     </NextIntlClientProvider>
   );

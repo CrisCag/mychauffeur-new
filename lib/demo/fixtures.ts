@@ -93,8 +93,14 @@ export function listCompatibleDemoVehicles(
 export const DEMO_VEHICLE_IMAGE_DISCLAIMER_IT =
   "Le immagini sono illustrative. Marca e modello dipendono dalla disponibilità; categoria e capacità prenotate restano il riferimento del servizio.";
 
+export const DEMO_VEHICLE_IMAGE_DISCLAIMER_EN =
+  "Images are illustrative. Make and model depend on availability; booked category and capacity remain the service reference.";
+
 export const DEMO_PRICE_DISCLAIMER_IT =
   "Prezzo dimostrativo. Non costituisce un’offerta commerciale.";
+
+export const DEMO_PRICE_DISCLAIMER_EN =
+  "Illustrative price. Does not constitute a commercial offer.";
 
 export type DemoLocationFixture = {
   readonly id: string;
@@ -182,23 +188,30 @@ export const DEMO_REASSURANCE_ITEMS = Object.freeze([
   Object.freeze({
     id: "door-to-door",
     labelIt: "Transfer door-to-door",
+    labelEn: "Door-to-door transfer",
   }),
   Object.freeze({
     id: "private-vehicle",
     labelIt: "Veicolo riservato",
+    labelEn: "Private vehicle",
   }),
   Object.freeze({
     id: "price-before-confirm",
     labelIt: "Prezzo mostrato prima della conferma",
+    labelEn: "Price shown before confirmation",
   }),
   Object.freeze({
     id: "assisted-flow",
     labelIt: "Flusso assistito MyChauffeur",
+    labelEn: "MyChauffeur assisted flow",
   }),
 ] as const);
 
 export const DEMO_REASSURANCE_NOTE_IT =
   "Caratteristiche illustrate nella demo del prodotto.";
+
+export const DEMO_REASSURANCE_NOTE_EN =
+  "Features illustrated in this product demo.";
 
 export function locationInputFromFixture(
   fixture: DemoLocationFixture

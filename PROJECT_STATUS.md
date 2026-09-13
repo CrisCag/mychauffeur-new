@@ -4,14 +4,14 @@ Registro operativo sintetico permanente. Aggiornare dopo ogni Work Package signi
 
 | Campo | Valore |
 |-------|--------|
-| **Ultimo aggiornamento** | **2026-09-11 20:52 Europe/Rome** |
+| **Ultimo aggiornamento** | **2026-09-13 10:29 Europe/Rome** |
 | Repository | `/Users/cristiancagnoni/progetti/mychauffeur-new` → `https://github.com/CrisCag/mychauffeur-new` |
 | Branch | `os-foundation/identity-tenant-booking` |
-| Ultimo commit su **origin** | `99521f6d808ff79d57f5cdd59ae18e26193ed499` — `docs(repository): align operational documentation with foundation` |
-| Continuity checkpoint (questo documento) | commit locale `docs(project): add continuity checkpoint` — **non pushato** (`ahead 1`; hash = `git rev-parse --short HEAD`) |
-| Working tree dopo quel commit | **pulito** |
+| Ultimo commit su **origin** | `37172c1e91d38884419a4fc1a3847e6f653af1d7` — `docs(project): add continuity checkpoint` |
+| Continuity checkpoint (questo documento) | commit `37172c1` — **pubblicato** su origin (`0/0`) |
+| Working tree | **pulito** dopo commit MC-WORK-008 (verificare con `git status`) |
 | Ultimo Work Package Domain/docs pubblicato | `MC-WORK-007` — Consolidamento documentazione (`99521f6`) |
-| Prossima attività | `MC-WORK-008` — Review visuale e funzionale Founder Demo |
+| Prossima attività | Feedback founder / WP Domain successivo (persistenza **oppure** Dispatch) |
 
 Riferimenti: [`HANDOFF.md`](HANDOFF.md) · [`PLATFORM_MAP.md`](PLATFORM_MAP.md) · [`README.md`](README.md) · [`docs/DECISIONS_PENDING.md`](docs/DECISIONS_PENDING.md)
 
@@ -34,19 +34,18 @@ Compilazione corrente (Europe/Rome):
 
 ```
 Ultima attività completata:
-  Continuity checkpoint permanente (`PROJECT_STATUS.md`) + correzione indicazioni stale push in HANDOFF/PLATFORM_MAP.
+  Review severa MC-WORK-008 (runtime IT/EN, ops READY, anti-EMFILE, gate qualità).
 Ultimo commit pubblicato:
-  `99521f6` su origin (`docs(repository): align operational documentation with foundation`).
-  Continuity checkpoint locale: `docs(project): add continuity checkpoint` (non pushato; `git log -1 --oneline`).
+  `37172c1` su origin (`docs(project): add continuity checkpoint`).
 Stato attuale:
-  Branch `os-foundation/identity-tenant-booking`; Foundation Domain + Founder Demo presenti;
-  migration solo versionate; MC-WORK-008 non iniziata.
+  Branch `os-foundation/identity-tenant-booking`; working tree sporco con fix demo non committati;
+  MC-WORK-008 IN CORSO (verificato, pronto al commit su richiesta).
 Sto aspettando da te:
-  Approvazione push del continuity checkpoint (se richiesto) e/o avvio review Founder Demo.
+  Approvazione commit (e eventuale push).
 Quando hai terminato, riportami:
-  Esito review visuale/funzionale di `/it/demo` e `/it/demo/ops` (pass/fail + note).
+  Conferma commit/push o ulteriori note.
 Prossimo passo:
-  MC-WORK-008 — Review visuale e funzionale Founder Demo.
+  Commit MC-WORK-008 su richiesta esplicita.
 ```
 
 ---
@@ -73,9 +72,11 @@ Persistenza production Foundation: **assente** (repository in-memory).
 |-------|--------|
 | Vertical slice | Quote → Booking CONFIRMED → Service |
 | Codice | `app/[locale]/demo/**`, `components/demo/**`, `lib/demo/**` |
-| Commit | `c2a571e` (pubblicato) |
+| Commit slice | `c2a571e` (pubblicato) |
+| Correzioni post-review | **MC-WORK-008 IN CORSO** (verifica severa 2026-09-13 OK) |
 | Gate | Non disponibile se `NODE_ENV === "production"` |
 | Admin produzione | **Assente** — solo pannello demo `/demo/ops` |
+| Dev locale | `npm run dev` → `scripts/dev-local.sh` (raise-only soft nofile + porta 3002) |
 
 ### URL locali (dev, porta 3002)
 
@@ -94,8 +95,8 @@ Presenti in `supabase/migrations/` (**9 file**: 1 legacy trip-ops + 8 Foundation
 
 ### Test attestati
 
-- Vitest: **355** test / **52** file (`npm run test:run`) — attestati in HANDOFF al checkpoint docs `99521f6`
-- Continuity Audit (post-push, chat): `tsc --noEmit`, `lint`, `build` OK — non rieseguiti in questo checkpoint file
+- Vitest: **355** test / **52** file (`npm run test:run`) — OK in review severa 2026-09-13
+- `tsc --noEmit`, `lint`, `build`, `git diff --check` — OK in review severa 2026-09-13
 
 ### Decisioni ancora aperte
 
@@ -114,6 +115,7 @@ pagamenti · acconto · cancellazioni · commissioni · modello partner · tarif
 | CI/CD | Nessun `.github/workflows` |
 | Admin / dispatcher produzione | Non implementati |
 | Dual-key Google Maps | Oggi stesso valore client/server; restrictions GCP richiedono chiavi distinte |
+| macOS EMFILE in `next dev` | Soft `launchctl maxfiles` spesso 256; mitigato da `scripts/dev-local.sh` (raise-only) |
 
 ### Azione esatta per riprendere
 
@@ -124,9 +126,10 @@ git status --branch --short
 npm run test:run
 npm run dev
 # Aprire: http://127.0.0.1:3002/it/demo  e  http://127.0.0.1:3002/it/demo/ops
+# EN: http://127.0.0.1:3002/en/demo  e  http://127.0.0.1:3002/en/demo/ops
 ```
 
-Prossima attività: **`MC-WORK-008` — review visuale e funzionale della Founder Demo** (nessuna modifica codice/migration senza piano esplicito).
+Prossima attività: **commit MC-WORK-008 su richiesta** (nessuna migration; nessun Domain Foundation).
 
 ---
 
@@ -141,19 +144,20 @@ Prossima attività: **`MC-WORK-008` — review visuale e funzionale della Founde
 | `MC-WORK-005` | Service Foundation | `2f2a977` | **COMPLETATA E PUBBLICATA** | Demo vertical slice (`MC-WORK-006`); test wall-clock `013ac30` |
 | `MC-WORK-006` | Founder Demo Vertical Slice | `c2a571e` | **COMPLETATA E PUBBLICATA** | Review visuale/funzionale (`MC-WORK-008`); corpus docs `8eba60b` in parallelo |
 | `MC-WORK-007` | Consolidamento documentazione | `99521f6` (+ corpus `8eba60b`) | **COMPLETATA E PUBBLICATA** | Registro permanente (`PROJECT_STATUS.md`); poi `MC-WORK-008` |
-| `MC-WORK-008` | Review visuale e funzionale Founder Demo | — | **NON INIZIATA** | Feedback founder → eventuali fix demo o scelta WP Domain successivo (persistenza **oppure** Dispatch) |
+| `MC-WORK-008` | Review visuale e funzionale Founder Demo | (questo commit) | **COMPLETATA** (push su richiesta) | Feedback founder → WP Domain successivo (persistenza **oppure** Dispatch) |
 
 ---
 
 ## ULTIMO CHECKPOINT
 
-- **Ultima azione eseguita:** registro permanente `PROJECT_STATUS.md` + correzione stale push in `HANDOFF.md` / `PLATFORM_MAP.md`
-- **Ultimo commit locale:** `docs(project): add continuity checkpoint` (non pushato; verificare con `git rev-parse HEAD`)
-- **Ultimo commit remoto:** `99521f6` su `origin/os-foundation/identity-tenant-booking`
-- **Ahead / behind:** `1 / 0` (atteso finché il continuity checkpoint non è pushato)
-- **Modifiche non committate:** nessuna, dopo il commit di questo checkpoint
-- **Test più recenti attestati:** 355 test / 52 file (`npm run test:run`)
-- **Prossima azione esatta:** avviare `MC-WORK-008` — review visuale e funzionale di `/it/demo` e `/it/demo/ops`
+CHECKPOINT — 2026-09-13 10:29 — Europe/Rome
+
+- **Ultima azione eseguita:** commit + push correzioni MC-WORK-008 (i18n, layout immersivo, UX ops/flow, anti-EMFILE, cookie nascosto in demo)
+- **Ultimo commit locale/remoto:** verificare con `git log -1 --oneline` / `git status -sb` dopo il push
+- **Ahead / behind:** atteso `0 / 0` dopo push su origin
+- **Modifiche non committate:** nessuna, dopo questo checkpoint di commit
+- **Test più recenti attestati:** 355/355 — OK; `tsc` OK; `lint` OK; `build` OK; `git diff --check` OK
+- **Prossima azione esatta:** feedback founder / scelta WP Domain successivo (persistenza oppure Dispatch)
 - **Comandi di avvio:**
   ```bash
   cd /Users/cristiancagnoni/progetti/mychauffeur-new
@@ -162,6 +166,8 @@ Prossima attività: **`MC-WORK-008` — review visuale e funzionale della Founde
   ```
 - **URL da verificare:**
   - http://127.0.0.1:3002/it/demo
+  - http://127.0.0.1:3002/en/demo
   - http://127.0.0.1:3002/it/demo/ops
-  - http://127.0.0.1:3002/it (contesto homepage)
-- **Operazioni vietate senza approvazione:** push · pull · fetch distruttivi · merge/rebase/reset · deploy · applicazione migration · modifica DB/Supabase · aggiornamento dependencies · modifica `.env` · esposizione secrets · cambio hosting/DNS · commit ulteriori non richiesti
+  - http://127.0.0.1:3002/en/demo/ops
+  - dettaglio booking ops
+- **Operazioni vietate senza approvazione:** push · pull · fetch distruttivi · merge/rebase/reset · deploy · applicazione migration · modifica DB/Supabase · aggiornamento dependencies · modifica `.env` · esposizione secrets · cambio hosting/DNS · commit non richiesti

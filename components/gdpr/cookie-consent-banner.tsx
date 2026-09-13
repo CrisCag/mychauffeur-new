@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +21,9 @@ type CookieConsentBannerProps = {
 };
 
 export function CookieConsentBanner({ locale, dict }: CookieConsentBannerProps) {
+  const pathname = usePathname() ?? "";
+  // Founder Demo is immersive and has no Maps/third-party need; hide GDPR chrome there only.
+  const isDemoRoute = /(?:^|\/)(?:(?:it|en)\/)?demo(?:\/|$)/.test(pathname);
   const c = dict.cookieBanner;
   const base = `/${locale}`;
   const {
@@ -30,8 +34,8 @@ export function CookieConsentBanner({ locale, dict }: CookieConsentBannerProps) 
     closePreferences,
   } = useCookieConsent();
 
-  const showBar = ready && consent === null;
-  const showModal = ready && preferencesOpen;
+  const showBar = !isDemoRoute && ready && consent === null;
+  const showModal = !isDemoRoute && ready && preferencesOpen;
 
   if (!showBar && !showModal) return null;
 

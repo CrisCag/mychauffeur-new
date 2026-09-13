@@ -19,15 +19,17 @@ import {
   DEMO_DESTINATION,
   DEMO_ORIGIN,
   DEMO_PRICES,
-  DEMO_PRICE_DISCLAIMER_IT,
-  DEMO_REASSURANCE_ITEMS,
-  DEMO_REASSURANCE_NOTE_IT,
   DEMO_SUGGESTED_GUEST,
   DEMO_VEHICLE_CATEGORIES,
   listCompatibleDemoVehicles,
   type DemoVehicleCategory,
 } from "@/lib/demo/fixtures";
-import { DEMO_ESSENTIAL_COPY, DEMO_FLOW_STEPS } from "@/lib/demo/labels";
+import {
+  demoActionMessage,
+  demoVehicleTitle,
+  formatDemoEuro,
+  getDemoCopy,
+} from "@/lib/demo/labels";
 import {
   actionResetDemo,
   actionSubmitDemoTransfer,
@@ -53,18 +55,16 @@ function tomorrowLocalIsoDate(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function formatEuro(minor: number): string {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-  }).format(minor / 100);
-}
-
 function newSubmissionKey(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return `sub-${crypto.randomUUID()}`;
   }
   return `sub-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** Wall clock for event-time validation (kept outside render). */
+function readWallClockMs(): number {
+  return Date.now();
 }
 
 function FieldHint({
@@ -82,6 +82,7 @@ function FieldHint({
 }
 
 export function DemoFlowClient({ locale }: { locale: string }) {
+  const copy = getDemoCopy(locale);
   const [step, setStep] = useState<Step>(1);
   const [date, setDate] = useState(tomorrowLocalIsoDate);
   const [time, setTime] = useState("10:00");
@@ -108,7 +109,6 @@ export function DemoFlowClient({ locale }: { locale: string }) {
     [passengers, luggage]
   );
 
-  /** Prefer explicit selection; never silently rewrite passenger/luggage inputs. */
   const selectedCategory =
     category !== null && compatible.includes(category) ? category : null;
 
@@ -117,48 +117,39 @@ export function DemoFlowClient({ locale }: { locale: string }) {
     return new Date(`${date}T${time}:00`).toISOString();
   }, [date, time]);
 
-  function validateStep1(): string | null {
+  function validateStep1(nowMs: number): string | null {
     const next: Record<string, string> = {};
-    if (!date) next.date = "Seleziona la data del pickup.";
-    if (!time) next.time = "Seleziona l’ora del pickup.";
+    if (!date) next.date = copy.errDateRequired;
+    if (!time) next.time = copy.errTimeRequired;
     const pickup = new Date(`${date}T${time}:00`);
     if (date && time && Number.isNaN(pickup.getTime())) {
-      next.date = "Data o ora non valide.";
-    } else if (date && time && pickup.getTime() <= Date.now()) {
-      next.time = "Scegli un orario futuro.";
+      next.date = copy.errDateInvalid;
+    } else if (date && time && pickup.getTime() <= nowMs) {
+      next.time = copy.errTimeFuture;
     }
     if (!Number.isSafeInteger(passengers) || passengers < 1 || passengers > 8) {
-      next.passengers = "Indica tra 1 e 8 passeggeri.";
+      next.passengers = copy.errPassengers;
     }
     if (!Number.isSafeInteger(luggage) || luggage < 0 || luggage > 12) {
-      next.luggage = "Indica tra 0 e 12 bagagli.";
+      next.luggage = copy.errLuggage;
     }
     setFieldErrors(next);
-    const first = Object.values(next)[0];
-    return first ?? null;
+    return Object.values(next)[0] ?? null;
   }
 
   function validateStep2(): string | null {
-    if (compatible.length === 0) {
-      return DEMO_ESSENTIAL_COPY.incompatibleVehicles;
-    }
-    if (!selectedCategory) {
-      return "Seleziona una categoria veicolo compatibile.";
-    }
+    if (compatible.length === 0) return copy.incompatibleVehicles;
+    if (!selectedCategory) return copy.errSelectVehicle;
     return null;
   }
 
-  function validateGuest(): string | null {
+  function validateStep3(): string | null {
     const next: Record<string, string> = {};
-    if (!/demo/i.test(guestName.trim())) {
-      next.guestName = "Il nome deve contenere “Demo” (dati fittizi).";
-    }
+    if (!guestName.includes("Demo")) next.guestName = copy.errGuestName;
     if (!guestEmail.trim().toLowerCase().endsWith(".test")) {
-      next.guestEmail = "Usa un’email con dominio .test";
+      next.guestEmail = copy.errGuestEmail;
     }
-    if (!guestPhone.trim()) {
-      next.guestPhone = "Inserisci un telefono fittizio.";
-    }
+    if (!guestPhone.trim()) next.guestPhone = copy.errGuestPhone;
     setFieldErrors(next);
     return Object.values(next)[0] ?? null;
   }
@@ -166,7 +157,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
   function goNext() {
     setError(null);
     if (step === 1) {
-      const err = validateStep1();
+      const err = validateStep1(readWallClockMs());
       if (err) {
         setError(err);
         return;
@@ -184,7 +175,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
       return;
     }
     if (step === 3) {
-      const err = validateGuest();
+      const err = validateStep3();
       if (err) {
         setError(err);
         return;
@@ -193,11 +184,23 @@ export function DemoFlowClient({ locale }: { locale: string }) {
     }
   }
 
+  function goToStep(target: Step) {
+    if (target >= step || target > 4) return;
+    if (step === 5) return;
+    setError(null);
+    setFieldErrors({});
+    setStep(target);
+  }
+
   function confirm() {
     setError(null);
-    const err = validateStep1() ?? validateStep2() ?? validateGuest();
+    const err =
+      validateStep1(readWallClockMs()) ||
+      validateStep2() ||
+      validateStep3() ||
+      null;
     if (err || !selectedCategory) {
-      setError(err ?? "Seleziona un veicolo.");
+      setError(err ?? copy.errSelectVehicle);
       return;
     }
     startTransition(async () => {
@@ -213,7 +216,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
           guestPhone,
         });
       if (!res.ok) {
-        setError(res.messageIt);
+        setError(demoActionMessage(res, locale));
         return;
       }
       setResult(res.data);
@@ -246,58 +249,77 @@ export function DemoFlowClient({ locale }: { locale: string }) {
     });
   }
 
+  const showHero = step === 1;
+
   return (
-    <div className="space-y-10">
-      <header className="space-y-4">
-        <p className="text-xs font-medium tracking-[0.22em] text-primary uppercase">
-          Transfer privato
-        </p>
-        <h1 className="max-w-3xl font-[family-name:var(--font-heading)] text-[1.85rem] leading-tight text-foreground sm:text-4xl md:text-[2.6rem]">
-          {DEMO_ESSENTIAL_COPY.heroTitle}
-        </h1>
-        <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">
-          {DEMO_ESSENTIAL_COPY.heroSubtitle}
-        </p>
-        <p className="text-sm text-foreground/80">{DEMO_ESSENTIAL_COPY.heroMicro}</p>
-      </header>
+    <div className="space-y-8">
+      {showHero ? (
+        <>
+          <header className="space-y-4">
+            <p className="text-xs font-medium tracking-[0.22em] text-primary uppercase">
+              {copy.privateTransferEyebrow}
+            </p>
+            <h1 className="max-w-3xl font-[family-name:var(--font-heading)] text-[1.85rem] leading-tight text-foreground sm:text-4xl md:text-[2.6rem]">
+              {copy.heroTitle}
+            </h1>
+            <p className="max-w-2xl text-base text-muted-foreground sm:text-lg">
+              {copy.heroSubtitle}
+            </p>
+            <p className="text-sm text-foreground/80">{copy.heroMicro}</p>
+          </header>
 
-      <section
-        aria-label="Caratteristiche illustrate"
-        className="rounded-2xl border border-border/50 bg-card/30 px-4 py-4 sm:px-5"
+          <section
+            aria-label={copy.reassuranceNote}
+            className="rounded-2xl border border-border/50 bg-card/30 px-4 py-4 sm:px-5"
+          >
+            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {copy.reassurance.map((item, idx) => {
+                const Icon = REASSURANCE_ICONS[idx] ?? ShieldCheck;
+                return (
+                  <li key={item.id} className="flex items-start gap-2.5 text-sm">
+                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/60 text-primary">
+                      <Icon className="size-4" aria-hidden />
+                    </span>
+                    <span className="pt-1.5 text-foreground/90">{item.label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {copy.reassuranceNote}
+            </p>
+          </section>
+        </>
+      ) : null}
+
+      <nav
+        aria-label="Demo steps"
+        className={cn(
+          "overflow-x-auto pb-1",
+          !showHero && "sticky top-0 z-10 -mx-1 rounded-xl border border-border/40 bg-background/90 px-1 py-2 backdrop-blur-md"
+        )}
       >
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {DEMO_REASSURANCE_ITEMS.map((item, idx) => {
-            const Icon = REASSURANCE_ICONS[idx] ?? ShieldCheck;
-            return (
-              <li key={item.id} className="flex items-start gap-2.5 text-sm">
-                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/60 text-primary">
-                  <Icon className="size-4" aria-hidden />
-                </span>
-                <span className="pt-1.5 text-foreground/90">{item.labelIt}</span>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {DEMO_REASSURANCE_NOTE_IT}
-        </p>
-      </section>
-
-      <nav aria-label="Passi demo" className="overflow-x-auto pb-1">
         <ol className="flex min-w-0 items-stretch gap-1 sm:gap-2">
-          {DEMO_FLOW_STEPS.map(({ n, label }) => {
+          {copy.flowSteps.map(({ n, label }) => {
             const active = step === n;
             const done = step > n;
+            const canJump = done && step < 5;
             return (
               <li key={n} className="min-w-0 flex-1">
-                <div
+                <button
+                  type="button"
+                  disabled={!canJump}
+                  onClick={() => goToStep(n as Step)}
                   className={cn(
-                    "flex h-full flex-col items-center gap-1.5 rounded-xl border px-1.5 py-2 text-center sm:px-2 sm:py-2.5",
+                    "flex h-full w-full flex-col items-center gap-1.5 rounded-xl border px-1.5 py-2 text-center transition-colors sm:px-2 sm:py-2.5",
                     active
                       ? "border-primary bg-primary/12 text-primary"
                       : done
-                        ? "border-border/70 text-foreground/80"
-                        : "border-border/40 text-muted-foreground/70"
+                        ? "border-border/70 text-foreground/80 hover:border-primary/40 hover:bg-primary/5"
+                        : "border-border/40 text-muted-foreground/70",
+                    canJump && "cursor-pointer",
+                    !canJump && "cursor-default",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   )}
                 >
                   <span
@@ -314,7 +336,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
                   <span className="max-w-full truncate text-[10px] font-medium tracking-wide sm:text-xs">
                     {label}
                   </span>
-                </div>
+                </button>
               </li>
             );
           })}
@@ -334,17 +356,15 @@ export function DemoFlowClient({ locale }: { locale: string }) {
         <section className="space-y-5 rounded-2xl border border-border/55 bg-card/35 p-5 sm:p-7">
           <div className="space-y-1">
             <h2 className="font-[family-name:var(--font-heading)] text-2xl">
-              {DEMO_ESSENTIAL_COPY.tripTitle}
+              {copy.tripTitle}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              Origine e destinazione sono fixture della demo.
-            </p>
+            <p className="text-sm text-muted-foreground">{copy.tripSubtitle}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="origin" className="inline-flex items-center gap-2">
                 <MapPin className="size-3.5 text-primary" aria-hidden />
-                Luogo di partenza
+                {copy.originLabel}
               </Label>
               <Input
                 id="origin"
@@ -352,7 +372,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
                 readOnly
                 className="bg-muted/35"
               />
-              <FieldHint>Aeroporto demo · non modificabile</FieldHint>
+              <FieldHint>{copy.originHint}</FieldHint>
             </div>
             <div className="space-y-2">
               <Label
@@ -360,7 +380,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
                 className="inline-flex items-center gap-2"
               >
                 <MapPin className="size-3.5 text-primary" aria-hidden />
-                Destinazione
+                {copy.destinationLabel}
               </Label>
               <Input
                 id="destination"
@@ -368,12 +388,12 @@ export function DemoFlowClient({ locale }: { locale: string }) {
                 readOnly
                 className="bg-muted/35"
               />
-              <FieldHint>Città demo · non modificabile</FieldHint>
+              <FieldHint>{copy.destinationHint}</FieldHint>
             </div>
             <div className="space-y-2">
               <Label htmlFor="date" className="inline-flex items-center gap-2">
                 <CalendarDays className="size-3.5 text-primary" aria-hidden />
-                Data del pickup
+                {copy.dateLabel}
               </Label>
               <Input
                 id="date"
@@ -392,7 +412,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
             <div className="space-y-2">
               <Label htmlFor="time" className="inline-flex items-center gap-2">
                 <Clock3 className="size-3.5 text-primary" aria-hidden />
-                Ora del pickup
+                {copy.timeLabel}
               </Label>
               <Input
                 id="time"
@@ -411,7 +431,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
             <div className="space-y-2">
               <Label htmlFor="pax" className="inline-flex items-center gap-2">
                 <Users className="size-3.5 text-primary" aria-hidden />
-                Passeggeri
+                {copy.passengersLabel}
               </Label>
               <Input
                 id="pax"
@@ -430,13 +450,13 @@ export function DemoFlowClient({ locale }: { locale: string }) {
                   {fieldErrors.passengers}
                 </p>
               ) : (
-                <FieldHint id="pax-hint">Incluse le persone a bordo</FieldHint>
+                <FieldHint id="pax-hint">{copy.passengersHint}</FieldHint>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="bags" className="inline-flex items-center gap-2">
                 <Briefcase className="size-3.5 text-primary" aria-hidden />
-                Bagagli
+                {copy.luggageLabel}
               </Label>
               <Input
                 id="bags"
@@ -455,14 +475,12 @@ export function DemoFlowClient({ locale }: { locale: string }) {
                   {fieldErrors.luggage}
                 </p>
               ) : (
-                <FieldHint id="bags-hint">
-                  Conta i bagagli grandi previsti
-                </FieldHint>
+                <FieldHint id="bags-hint">{copy.luggageHint}</FieldHint>
               )}
             </div>
           </div>
           <Button type="button" className="min-h-11 px-6" onClick={goNext}>
-            Continua
+            {copy.continueLabel}
           </Button>
         </section>
       ) : null}
@@ -471,10 +489,10 @@ export function DemoFlowClient({ locale }: { locale: string }) {
         <section className="space-y-5 rounded-2xl border border-border/55 bg-card/35 p-5 sm:p-7">
           <div className="space-y-1">
             <h2 className="font-[family-name:var(--font-heading)] text-2xl">
-              {DEMO_ESSENTIAL_COPY.vehicleTitle}
+              {copy.vehicleTitle}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {DEMO_ESSENTIAL_COPY.vehicleSubtitle}
+              {copy.vehicleSubtitle}
             </p>
           </div>
           {compatible.length === 0 ? (
@@ -482,10 +500,11 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               role="status"
               className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm text-amber-50"
             >
-              {DEMO_ESSENTIAL_COPY.incompatibleVehicles}
+              {copy.incompatibleVehicles}
             </p>
           ) : (
             <DemoVehiclePicker
+              locale={locale}
               categories={DEMO_VEHICLE_CATEGORIES}
               selected={selectedCategory}
               onSelect={setCategory}
@@ -500,7 +519,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               className="min-h-11"
               onClick={() => setStep(1)}
             >
-              Indietro
+              {copy.backLabel}
             </Button>
             <Button
               type="button"
@@ -508,7 +527,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               onClick={goNext}
               disabled={compatible.length === 0 || !selectedCategory}
             >
-              Continua
+              {copy.continueLabel}
             </Button>
           </div>
         </section>
@@ -518,18 +537,18 @@ export function DemoFlowClient({ locale }: { locale: string }) {
         <section className="space-y-5 rounded-2xl border border-border/55 bg-card/35 p-5 sm:p-7">
           <div className="space-y-2">
             <h2 className="font-[family-name:var(--font-heading)] text-2xl">
-              {DEMO_ESSENTIAL_COPY.guestTitle}
+              {copy.guestTitle}
             </h2>
             <p
               role="note"
               className="rounded-xl border border-primary/35 bg-primary/10 px-4 py-3 text-sm text-primary"
             >
-              {DEMO_SUGGESTED_GUEST.noteIt}
+              {copy.guestNote}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="guestName">Nome del passeggero</Label>
+              <Label htmlFor="guestName">{copy.guestNameLabel}</Label>
               <Input
                 id="guestName"
                 value={guestName}
@@ -547,7 +566,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="guestEmail">Email di contatto</Label>
+              <Label htmlFor="guestEmail">{copy.guestEmailLabel}</Label>
               <Input
                 id="guestEmail"
                 type="email"
@@ -566,7 +585,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="guestPhone">Telefono di contatto</Label>
+              <Label htmlFor="guestPhone">{copy.guestPhoneLabel}</Label>
               <Input
                 id="guestPhone"
                 value={guestPhone}
@@ -591,10 +610,10 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               className="min-h-11"
               onClick={() => setStep(2)}
             >
-              Indietro
+              {copy.backLabel}
             </Button>
             <Button type="button" className="min-h-11 px-6" onClick={goNext}>
-              Continua
+              {copy.continueLabel}
             </Button>
           </div>
         </section>
@@ -603,46 +622,47 @@ export function DemoFlowClient({ locale }: { locale: string }) {
       {step === 4 && price && selectedCategory ? (
         <section className="space-y-5 rounded-2xl border border-border/55 bg-card/35 p-5 sm:p-7">
           <h2 className="font-[family-name:var(--font-heading)] text-2xl">
-            {DEMO_ESSENTIAL_COPY.summaryTitle}
+            {copy.summaryTitle}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <SummaryBlock title="Itinerario">
+            <SummaryBlock title={copy.blockItinerary}>
               {DEMO_ORIGIN.displayLabel}
               <br />→ {DEMO_DESTINATION.displayLabel}
             </SummaryBlock>
-            <SummaryBlock title="Data e ora">
+            <SummaryBlock title={copy.blockDatetime}>
               {date} · {time}
               <br />
               <span className="text-muted-foreground">
-                Fuso {DEMO_ORIGIN.timezone}
+                {copy.timezoneLabel} {DEMO_ORIGIN.timezone}
               </span>
             </SummaryBlock>
-            <SummaryBlock title="Veicolo">{price.labelIt}</SummaryBlock>
-            <SummaryBlock title="Passeggeri e bagagli">
-              {passengers} passeggeri · {luggage} bagagli
+            <SummaryBlock title={copy.blockVehicle}>
+              {demoVehicleTitle(selectedCategory, locale)}
             </SummaryBlock>
-            <SummaryBlock title="Contatto">
+            <SummaryBlock title={copy.blockPaxBags}>
+              {passengers} {copy.passengersShort} · {luggage}{" "}
+              {copy.luggageShort}
+            </SummaryBlock>
+            <SummaryBlock title={copy.blockContact}>
               {guestName}
               <br />
               {guestEmail}
               <br />
               {guestPhone}
             </SummaryBlock>
-            <SummaryBlock title="Prezzo demo">
+            <SummaryBlock title={copy.blockPrice}>
               <span className="block font-[family-name:var(--font-heading)] text-2xl text-primary">
-                {formatEuro(price.totalCustomerAmountMinor)}
+                {formatDemoEuro(price.totalCustomerAmountMinor, locale)}
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
-                {DEMO_ESSENTIAL_COPY.priceTotalLabel} ·{" "}
-                {DEMO_ESSENTIAL_COPY.priceDemoLabel}
+                {copy.priceTotalLabel} · {copy.priceDemoLabel}
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
-                {DEMO_PRICE_DISCLAIMER_IT}
+                {copy.priceDisclaimer}
               </span>
             </SummaryBlock>
-            <SummaryBlock title="Condizioni demo" className="sm:col-span-2">
-              Nessun pagamento · dati solo nel processo locale · nessuna
-              disponibilità reale garantita · policy demo{" "}
+            <SummaryBlock title={copy.blockConditions} className="sm:col-span-2">
+              {copy.conditionsBody}{" "}
               <span className="font-mono text-[11px]">demo.cancel.std</span>
             </SummaryBlock>
           </div>
@@ -653,7 +673,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               className="min-h-11"
               onClick={() => setStep(3)}
             >
-              Indietro
+              {copy.backLabel}
             </Button>
             <Button
               type="button"
@@ -664,10 +684,10 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               {pending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-                  Elaborazione…
+                  {copy.processing}
                 </>
               ) : (
-                DEMO_ESSENTIAL_COPY.confirmCta
+                copy.confirmCta
               )}
             </Button>
           </div>
@@ -679,34 +699,38 @@ export function DemoFlowClient({ locale }: { locale: string }) {
           <div className="space-y-2">
             <p className="inline-flex items-center gap-2 text-sm text-primary">
               <Check className="size-4" aria-hidden />
-              Completato
+              {copy.completed}
             </p>
             <h2 className="font-[family-name:var(--font-heading)] text-2xl text-primary">
-              {DEMO_ESSENTIAL_COPY.resultTitle}
+              {copy.resultTitle}
             </h2>
           </div>
           <ul className="space-y-2 text-sm text-foreground/90">
-            <li>Quote accettata · {result.quoteNumber}</li>
             <li>
-              Booking confermato · {result.bookingNumber} (
+              {copy.quoteAccepted} · {result.quoteNumber}
+            </li>
+            <li>
+              {copy.bookingConfirmed} · {result.bookingNumber} (
               {result.bookingStatus})
             </li>
             <li>
-              Service pianificato · {result.serviceNumber} (
+              {copy.servicePlanned} · {result.serviceNumber} (
               {result.serviceStatus})
             </li>
-            <li>{result.processLocalNoticeIt}</li>
-            <li>Nessun pagamento effettuato.</li>
+            <li>
+              {locale === "en"
+                ? result.processLocalNoticeEn
+                : result.processLocalNoticeIt}
+            </li>
+            <li>{copy.noPayment}</li>
           </ul>
           <p className="text-sm text-muted-foreground">
-            Totale demo: {formatEuro(result.priceTotalMinor)} ·{" "}
-            {DEMO_ESSENTIAL_COPY.priceNotOffer}
+            {copy.totalDemo}: {formatDemoEuro(result.priceTotalMinor, locale)} ·{" "}
+            {copy.priceNotOffer}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button asChild className="min-h-11">
-              <Link href={`/${locale}/demo/ops`}>
-                Apri il pannello operativo
-              </Link>
+              <Link href={`/${locale}/demo/ops`}>{copy.openOps}</Link>
             </Button>
             <Button
               type="button"
@@ -714,7 +738,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               className="min-h-11"
               onClick={startAnother}
             >
-              Crea un altro transfer demo
+              {copy.anotherTransfer}
             </Button>
             <Button
               type="button"
@@ -723,7 +747,7 @@ export function DemoFlowClient({ locale }: { locale: string }) {
               onClick={resetAll}
               disabled={pending}
             >
-              Reset sessione demo
+              {copy.resetSession}
             </Button>
           </div>
         </section>
