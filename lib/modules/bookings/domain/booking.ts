@@ -84,6 +84,8 @@ export type Booking = {
   readonly status: BookingStatus;
   readonly requestedAt: Date;
   readonly confirmedAt: Date | null;
+  readonly fulfillmentStartedAt: Date | null;
+  readonly completedAt: Date | null;
   readonly cancelledAt: Date | null;
   readonly expiredAt: Date | null;
   readonly createdAt: Date;
@@ -128,6 +130,8 @@ export type RehydrateBookingInput = {
   status: BookingStatus | string;
   requestedAt: Date;
   confirmedAt?: Date | null;
+  fulfillmentStartedAt?: Date | null;
+  completedAt?: Date | null;
   cancelledAt?: Date | null;
   expiredAt?: Date | null;
   createdAt: Date;
@@ -184,15 +188,59 @@ function assertCustomerPresence(
 function assertStatusTimestamps(
   status: BookingStatus,
   confirmedAt: Date | null,
+  fulfillmentStartedAt: Date | null,
+  completedAt: Date | null,
   cancelledAt: Date | null,
   expiredAt: Date | null
 ): void {
-  if (status === "CONFIRMED") {
+  if (
+    status === "CONFIRMED" ||
+    status === "IN_PROGRESS" ||
+    status === "COMPLETED"
+  ) {
     if (!confirmedAt) {
       throw new DomainValidationError("confirmedAt is required when CONFIRMED");
     }
   } else if (confirmedAt) {
-    throw new DomainValidationError("confirmedAt is only allowed when CONFIRMED");
+    throw new DomainValidationError(
+      "confirmedAt is only allowed after confirmation"
+    );
+  }
+
+  if (status === "IN_PROGRESS" || status === "COMPLETED") {
+    if (!fulfillmentStartedAt) {
+      throw new DomainValidationError(
+        "fulfillmentStartedAt is required during fulfillment"
+      );
+    }
+  } else if (fulfillmentStartedAt) {
+    throw new DomainValidationError(
+      "fulfillmentStartedAt is only allowed during fulfillment"
+    );
+  }
+
+  if ((status === "COMPLETED") !== Boolean(completedAt)) {
+    throw new DomainValidationError(
+      "Booking completion status and completedAt are inconsistent"
+    );
+  }
+  if (
+    confirmedAt &&
+    fulfillmentStartedAt &&
+    confirmedAt.getTime() > fulfillmentStartedAt.getTime()
+  ) {
+    throw new DomainValidationError(
+      "confirmedAt must be <= fulfillmentStartedAt"
+    );
+  }
+  if (
+    fulfillmentStartedAt &&
+    completedAt &&
+    fulfillmentStartedAt.getTime() > completedAt.getTime()
+  ) {
+    throw new DomainValidationError(
+      "fulfillmentStartedAt must be <= completedAt"
+    );
   }
 
   if (status === "CANCELLED") {
@@ -232,6 +280,10 @@ function freezeBooking(booking: Booking): Booking {
     ...booking,
     requestedAt: copyDate(booking.requestedAt),
     confirmedAt: booking.confirmedAt ? copyDate(booking.confirmedAt) : null,
+    fulfillmentStartedAt: booking.fulfillmentStartedAt
+      ? copyDate(booking.fulfillmentStartedAt)
+      : null,
+    completedAt: booking.completedAt ? copyDate(booking.completedAt) : null,
     cancelledAt: booking.cancelledAt ? copyDate(booking.cancelledAt) : null,
     expiredAt: booking.expiredAt ? copyDate(booking.expiredAt) : null,
     createdAt: copyDate(booking.createdAt),
@@ -251,14 +303,17 @@ function freezeBooking(booking: Booking): Booking {
  * Allowed transitions (Step 5 subset).
  * DRAFT → PENDING_CONFIRMATION | CANCELLED | EXPIRED
  * PENDING_CONFIRMATION → CONFIRMED | CANCELLED | EXPIRED
- * CONFIRMED → CANCELLED
+ * CONFIRMED → IN_PROGRESS | CANCELLED
+ * IN_PROGRESS → COMPLETED
  */
 const ALLOWED_TRANSITIONS: Readonly<
   Record<BookingStatus, readonly BookingStatus[]>
 > = {
   DRAFT: ["PENDING_CONFIRMATION", "CANCELLED", "EXPIRED"],
   PENDING_CONFIRMATION: ["CONFIRMED", "CANCELLED", "EXPIRED"],
-  CONFIRMED: ["CANCELLED"],
+  CONFIRMED: ["IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["COMPLETED"],
+  COMPLETED: [],
   CANCELLED: [],
   EXPIRED: [],
 };
@@ -308,7 +363,7 @@ export function createBooking(input: CreateBookingInput): Booking {
   assertTimestamps(now, updatedAt, requestedAt);
 
   const status: BookingStatus = "DRAFT";
-  assertStatusTimestamps(status, null, null, null);
+  assertStatusTimestamps(status, null, null, null, null, null);
 
   if (input.version !== undefined && input.version !== 0) {
     throw new DomainValidationError("New Booking version must be 0");
@@ -329,6 +384,8 @@ export function createBooking(input: CreateBookingInput): Booking {
     status,
     requestedAt,
     confirmedAt: null,
+    fulfillmentStartedAt: null,
+    completedAt: null,
     cancelledAt: null,
     expiredAt: null,
     createdAt: now,
@@ -374,9 +431,18 @@ export function rehydrateBooking(input: RehydrateBookingInput): Booking {
 
   const status = input.status as BookingStatus;
   const confirmedAt = input.confirmedAt ?? null;
+  const fulfillmentStartedAt = input.fulfillmentStartedAt ?? null;
+  const completedAt = input.completedAt ?? null;
   const cancelledAt = input.cancelledAt ?? null;
   const expiredAt = input.expiredAt ?? null;
-  assertStatusTimestamps(status, confirmedAt, cancelledAt, expiredAt);
+  assertStatusTimestamps(
+    status,
+    confirmedAt,
+    fulfillmentStartedAt,
+    completedAt,
+    cancelledAt,
+    expiredAt
+  );
 
   const commercial: CommercialSnapshotFields = {
     priceSnapshot: input.priceSnapshot ?? null,
@@ -399,6 +465,10 @@ export function rehydrateBooking(input: RehydrateBookingInput): Booking {
     status,
     requestedAt: copyDate(input.requestedAt),
     confirmedAt: confirmedAt ? copyDate(confirmedAt) : null,
+    fulfillmentStartedAt: fulfillmentStartedAt
+      ? copyDate(fulfillmentStartedAt)
+      : null,
+    completedAt: completedAt ? copyDate(completedAt) : null,
     cancelledAt: cancelledAt ? copyDate(cancelledAt) : null,
     expiredAt: expiredAt ? copyDate(expiredAt) : null,
     createdAt: copyDate(input.createdAt),
@@ -414,15 +484,25 @@ function transition(
   at: Date,
   timestamps: {
     confirmedAt?: Date | null;
+    fulfillmentStartedAt?: Date | null;
+    completedAt?: Date | null;
     cancelledAt?: Date | null;
     expiredAt?: Date | null;
   },
   commercial: CommercialSnapshotFields
 ): Booking {
   assertTransition(booking.status, to);
+  if (!(at instanceof Date) || Number.isNaN(at.getTime())) {
+    throw new DomainValidationError("transition timestamp is invalid");
+  }
   const updatedAt = at;
   if (booking.createdAt.getTime() > updatedAt.getTime()) {
     throw new DomainValidationError("createdAt must be <= updatedAt");
+  }
+  if (booking.updatedAt.getTime() > updatedAt.getTime()) {
+    throw new DomainValidationError(
+      "transition timestamp must be >= previous updatedAt"
+    );
   }
 
   assertCommercialSnapshotInvariants(to, commercial);
@@ -434,6 +514,14 @@ function transition(
       timestamps.confirmedAt !== undefined
         ? timestamps.confirmedAt
         : booking.confirmedAt,
+    fulfillmentStartedAt:
+      timestamps.fulfillmentStartedAt !== undefined
+        ? timestamps.fulfillmentStartedAt
+        : booking.fulfillmentStartedAt,
+    completedAt:
+      timestamps.completedAt !== undefined
+        ? timestamps.completedAt
+        : booking.completedAt,
     cancelledAt:
       timestamps.cancelledAt !== undefined
         ? timestamps.cancelledAt
@@ -450,6 +538,8 @@ function transition(
   assertStatusTimestamps(
     next.status,
     next.confirmedAt,
+    next.fulfillmentStartedAt,
+    next.completedAt,
     next.cancelledAt,
     next.expiredAt
   );
@@ -516,10 +606,37 @@ export function confirmBooking(
     at,
     {
       confirmedAt: at,
+      fulfillmentStartedAt: null,
+      completedAt: null,
       cancelledAt: null,
       expiredAt: null,
     },
     commercialFieldsFromBundle(snapshots, 1)
+  );
+}
+
+export function markBookingInProgress(
+  booking: Booking,
+  at: Date
+): Booking {
+  if (booking.status === "IN_PROGRESS") return booking;
+  return transition(
+    booking,
+    "IN_PROGRESS",
+    at,
+    { fulfillmentStartedAt: at, completedAt: null },
+    commercialFromBooking(booking)
+  );
+}
+
+export function completeBooking(booking: Booking, at: Date): Booking {
+  if (booking.status === "COMPLETED") return booking;
+  return transition(
+    booking,
+    "COMPLETED",
+    at,
+    { completedAt: at },
+    commercialFromBooking(booking)
   );
 }
 
@@ -535,6 +652,8 @@ export function cancelBooking(
     {
       cancelledAt: at,
       confirmedAt: null,
+      fulfillmentStartedAt: null,
+      completedAt: null,
       expiredAt: null,
     },
     commercialFromBooking(booking)
@@ -552,6 +671,8 @@ export function expireBooking(
     {
       expiredAt: at,
       confirmedAt: null,
+      fulfillmentStartedAt: null,
+      completedAt: null,
       cancelledAt: null,
     },
     commercialFromBooking(booking)

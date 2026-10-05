@@ -1,20 +1,26 @@
 /**
  * Step 5 BookingStatus subset (MC-OS-032 commercial lifecycle reduced).
  * Deferred (not implemented): QUOTED, PENDING_PAYMENT, PENDING_MANUAL_REVIEW,
- * READY_FOR_SERVICE_GENERATION, PARTIALLY_CANCELLED, COMPLETED, ARCHIVED.
+ * READY_FOR_SERVICE_GENERATION, PARTIALLY_CANCELLED, ARCHIVED.
  */
 
 export const BOOKING_STATUSES = [
   "DRAFT",
   "PENDING_CONFIRMATION",
   "CONFIRMED",
+  "IN_PROGRESS",
+  "COMPLETED",
   "CANCELLED",
   "EXPIRED",
 ] as const;
 
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
-export const TERMINAL_BOOKING_STATUSES = ["CANCELLED", "EXPIRED"] as const;
+export const TERMINAL_BOOKING_STATUSES = [
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+] as const;
 
 export type TerminalBookingStatus = (typeof TERMINAL_BOOKING_STATUSES)[number];
 

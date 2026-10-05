@@ -12,6 +12,8 @@ export {
   rehydrateBooking,
   requestBookingConfirmation,
   confirmBooking,
+  markBookingInProgress,
+  completeBooking,
   cancelBooking,
   expireBooking,
   assertBookingSourceUnchanged,

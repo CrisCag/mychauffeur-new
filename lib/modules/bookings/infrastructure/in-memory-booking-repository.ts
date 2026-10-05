@@ -57,6 +57,12 @@ export class InMemoryBookingRepository implements BookingRepository {
       confirmedAt: booking.confirmedAt
         ? new Date(booking.confirmedAt.getTime())
         : null,
+      fulfillmentStartedAt: booking.fulfillmentStartedAt
+        ? new Date(booking.fulfillmentStartedAt.getTime())
+        : null,
+      completedAt: booking.completedAt
+        ? new Date(booking.completedAt.getTime())
+        : null,
       cancelledAt: booking.cancelledAt
         ? new Date(booking.cancelledAt.getTime())
         : null,

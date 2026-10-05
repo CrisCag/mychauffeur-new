@@ -105,7 +105,7 @@ function countPresent(fields: CommercialSnapshotFields): number {
 
 /**
  * Snapshot presence rules (Step 6):
- * - CONFIRMED: all four required, commercialRevision === 1
+ * - CONFIRMED / IN_PROGRESS / COMPLETED: all four required, revision 1
  * - CANCELLED after confirm: all four retained, commercialRevision === 1
  * - CANCELLED without confirm / DRAFT / PENDING / EXPIRED: none, revision 0
  * - Partial combinations always rejected
@@ -123,7 +123,11 @@ export function assertCommercialSnapshotInvariants(
     throw new DomainValidationError("commercialRevision is invalid");
   }
 
-  if (status === "CONFIRMED") {
+  if (
+    status === "CONFIRMED" ||
+    status === "IN_PROGRESS" ||
+    status === "COMPLETED"
+  ) {
     if (present !== 4) {
       throw new MissingCommercialSnapshotError();
     }
