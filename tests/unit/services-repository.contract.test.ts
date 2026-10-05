@@ -8,12 +8,14 @@ import type { ServiceRepository } from "@/lib/modules/services";
 import {
   asServiceBookingId,
   cancelService,
+  completeService,
   createServiceNumberFromToken,
   DomainValidationError,
   DuplicateServiceGenerationKeyError,
   DuplicateServiceNumberError,
   DuplicateServiceSequenceError,
   markServiceReadyForAssignment,
+  markServiceInExecution,
   ServiceVersionConflictError,
 } from "@/lib/modules/services";
 import { createServiceFromConfirmedBooking } from "@/lib/modules/services/domain/service";
@@ -290,6 +292,39 @@ export function registerServiceRepositoryContractTests(
       await expect(repo.save(mutated as typeof ready, 0)).rejects.toBeInstanceOf(
         DomainValidationError
       );
+    });
+
+    it("persists execution lifecycle timestamps with OCC and deep clones", async () => {
+      const repo = createRepo();
+      const planned = createPlannedService();
+      await repo.save(planned);
+      const ready = markServiceReadyForAssignment(
+        planned,
+        new Date("2026-08-02T13:00:00.000Z")
+      ).service;
+      await repo.save(ready, 0);
+      const executing = markServiceInExecution(
+        ready,
+        new Date("2026-08-02T14:00:00.000Z")
+      ).service;
+      await repo.save(executing, 1);
+      const completed = completeService(
+        executing,
+        new Date("2026-08-02T16:00:00.000Z")
+      ).service;
+      await repo.save(completed, 2);
+
+      const loaded = await repo.findById(
+        completed.tenantId,
+        completed.organizationId,
+        completed.id
+      );
+      expect(loaded?.status).toBe("COMPLETED");
+      expect(loaded?.version).toBe(3);
+      expect(loaded?.executionStartedAt).toEqual(completed.executionStartedAt);
+      expect(loaded?.executionStartedAt).not.toBe(completed.executionStartedAt);
+      expect(loaded?.completedAt).toEqual(completed.completedAt);
+      expect(loaded?.completedAt).not.toBe(completed.completedAt);
     });
 
     it("findByServiceNumber and findByGenerationKey round-trip", async () => {

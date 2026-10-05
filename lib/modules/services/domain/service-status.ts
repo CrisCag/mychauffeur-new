@@ -1,6 +1,8 @@
 export const SERVICE_STATUSES = [
   "PLANNED",
   "READY_FOR_ASSIGNMENT",
+  "IN_EXECUTION",
+  "COMPLETED",
   "CANCELLED",
 ] as const;
 
@@ -11,5 +13,5 @@ export function isServiceStatus(value: string): value is ServiceStatus {
 }
 
 export function isTerminalServiceStatus(status: ServiceStatus): boolean {
-  return status === "CANCELLED";
+  return status === "COMPLETED" || status === "CANCELLED";
 }

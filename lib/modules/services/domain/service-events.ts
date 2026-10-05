@@ -6,6 +6,8 @@
 export type ServiceDomainEventType =
   | "Service.Created"
   | "Service.ReadyForAssignment"
+  | "Service.ExecutionStarted"
+  | "Service.Completed"
   | "Service.ScheduleAdjusted"
   | "Service.RequirementsAdjusted"
   | "Service.Cancelled";

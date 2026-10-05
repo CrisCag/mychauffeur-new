@@ -107,6 +107,12 @@ export class InMemoryServiceRepository implements ServiceRepository {
       operationalContact: service.operationalContact
         ? { ...service.operationalContact }
         : null,
+      executionStartedAt: service.executionStartedAt
+        ? new Date(service.executionStartedAt.getTime())
+        : null,
+      completedAt: service.completedAt
+        ? new Date(service.completedAt.getTime())
+        : null,
       cancelReasonCode: service.cancelReasonCode,
       cancelledAt: service.cancelledAt
         ? new Date(service.cancelledAt.getTime())

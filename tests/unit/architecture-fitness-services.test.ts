@@ -120,7 +120,6 @@ describe("architecture fitness — services module boundaries", () => {
       /JSON\.stringify/,
       /\bFCO\b/,
       /Umbria/i,
-      /["']COMPLETED["']/,
       /["']ASSIGNED["']/,
       /["']IN_PROGRESS["']/,
       /["']CUSTOM["']/,

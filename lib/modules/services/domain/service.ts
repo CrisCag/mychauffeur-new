@@ -74,6 +74,8 @@ export type Service = {
   readonly schedule: ServiceSchedule;
   readonly requirements: ServiceRequirements;
   readonly operationalContact: OperationalContactSnapshot | null;
+  readonly executionStartedAt: Date | null;
+  readonly completedAt: Date | null;
   readonly cancelReasonCode: ServiceCancellationReason | null;
   readonly cancelledAt: Date | null;
   readonly createdAt: Date;
@@ -123,6 +125,8 @@ export type RehydrateServiceInput = {
   schedule: ServiceScheduleInput;
   requirements: ServiceRequirementsInput;
   operationalContact?: OperationalContactSnapshotInput | null;
+  executionStartedAt?: Date | null;
+  completedAt?: Date | null;
   cancelReasonCode?: ServiceCancellationReason | string | null;
   cancelledAt?: Date | null;
   createdAt: Date;
@@ -200,12 +204,65 @@ function assertCancellationCoupling(
   }
 }
 
+function assertExecutionCoupling(service: Service): void {
+  if (
+    (service.status === "IN_EXECUTION" || service.status === "COMPLETED") &&
+    !service.executionStartedAt
+  ) {
+    throw new DomainValidationError(
+      "Service execution status requires executionStartedAt"
+    );
+  }
+  if (
+    service.status !== "IN_EXECUTION" &&
+    service.status !== "COMPLETED" &&
+    service.executionStartedAt
+  ) {
+    throw new DomainValidationError(
+      "executionStartedAt is only allowed during execution lifecycle"
+    );
+  }
+  if ((service.status === "COMPLETED") !== Boolean(service.completedAt)) {
+    throw new DomainValidationError(
+      "Service completion status and completedAt are inconsistent"
+    );
+  }
+  if (
+    service.executionStartedAt &&
+    service.completedAt &&
+    service.executionStartedAt.getTime() > service.completedAt.getTime()
+  ) {
+    throw new DomainValidationError(
+      "executionStartedAt must be <= completedAt"
+    );
+  }
+  if (
+    service.executionStartedAt &&
+    service.executionStartedAt.getTime() < service.createdAt.getTime()
+  ) {
+    throw new DomainValidationError(
+      "executionStartedAt must be >= createdAt"
+    );
+  }
+  if (
+    (service.executionStartedAt &&
+      service.executionStartedAt.getTime() > service.updatedAt.getTime()) ||
+    (service.completedAt &&
+      service.completedAt.getTime() > service.updatedAt.getTime())
+  ) {
+    throw new DomainValidationError(
+      "Service execution timestamps must be <= updatedAt"
+    );
+  }
+}
+
 function freezeService(service: Service): Service {
   assertCancellationCoupling(
     service.status,
     service.cancelReasonCode,
     service.cancelledAt
   );
+  assertExecutionCoupling(service);
   return Object.freeze({
     ...service,
     routePlan: cloneRoutePlanSnapshot(service.routePlan, service.serviceType),
@@ -214,6 +271,10 @@ function freezeService(service: Service): Service {
     operationalContact: cloneOperationalContactSnapshot(
       service.operationalContact
     ),
+    executionStartedAt: service.executionStartedAt
+      ? copyDate(service.executionStartedAt)
+      : null,
+    completedAt: service.completedAt ? copyDate(service.completedAt) : null,
     cancelledAt: service.cancelledAt ? copyDate(service.cancelledAt) : null,
     createdAt: copyDate(service.createdAt),
     updatedAt: copyDate(service.updatedAt),
@@ -301,6 +362,8 @@ export function createServiceFromConfirmedBooking(
     schedule,
     requirements,
     operationalContact,
+    executionStartedAt: null,
+    completedAt: null,
     cancelReasonCode: null,
     cancelledAt: null,
     createdAt,
@@ -365,6 +428,14 @@ export function rehydrateService(input: RehydrateServiceInput): Service {
     input.cancelledAt === undefined || input.cancelledAt === null
       ? null
       : assertClock(input.cancelledAt, "cancelledAt");
+  const executionStartedAt =
+    input.executionStartedAt === undefined || input.executionStartedAt === null
+      ? null
+      : assertClock(input.executionStartedAt, "executionStartedAt");
+  const completedAt =
+    input.completedAt === undefined || input.completedAt === null
+      ? null
+      : assertClock(input.completedAt, "completedAt");
 
   const createdAt = assertClock(input.createdAt, "createdAt");
   const updatedAt = assertClock(input.updatedAt, "updatedAt");
@@ -386,12 +457,74 @@ export function rehydrateService(input: RehydrateServiceInput): Service {
     schedule,
     requirements,
     operationalContact,
+    executionStartedAt,
+    completedAt,
     cancelReasonCode,
     cancelledAt,
     createdAt,
     updatedAt,
     version: assertVersion(input.version),
   });
+}
+
+/** READY_FOR_ASSIGNMENT → IN_EXECUTION. */
+export function markServiceInExecution(
+  service: Service,
+  at: Date
+): ServiceOperationResult {
+  if (service.status === "IN_EXECUTION") {
+    return operationResult(service, []);
+  }
+  if (service.status !== "READY_FOR_ASSIGNMENT") {
+    throw new InvalidServiceStateTransitionError();
+  }
+  const occurredAt = assertClock(at, "at");
+  const next = bump(service, occurredAt, {
+    status: "IN_EXECUTION",
+    executionStartedAt: copyDate(occurredAt),
+  });
+  return operationResult(next, [
+    createServiceDomainEvent({
+      type: "Service.ExecutionStarted",
+      serviceId: next.id,
+      tenantId: next.tenantId,
+      organizationId: next.organizationId,
+      bookingId: next.bookingId,
+      serviceSequence: next.serviceSequence,
+      status: next.status,
+      occurredAt,
+    }),
+  ]);
+}
+
+/** IN_EXECUTION → COMPLETED. */
+export function completeService(
+  service: Service,
+  at: Date
+): ServiceOperationResult {
+  if (service.status === "COMPLETED") {
+    return operationResult(service, []);
+  }
+  if (service.status !== "IN_EXECUTION") {
+    throw new InvalidServiceStateTransitionError();
+  }
+  const occurredAt = assertClock(at, "at");
+  const next = bump(service, occurredAt, {
+    status: "COMPLETED",
+    completedAt: copyDate(occurredAt),
+  });
+  return operationResult(next, [
+    createServiceDomainEvent({
+      type: "Service.Completed",
+      serviceId: next.id,
+      tenantId: next.tenantId,
+      organizationId: next.organizationId,
+      bookingId: next.bookingId,
+      serviceSequence: next.serviceSequence,
+      status: next.status,
+      occurredAt,
+    }),
+  ]);
 }
 
 /**

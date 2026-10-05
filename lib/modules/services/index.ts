@@ -115,6 +115,8 @@ export type {
 export {
   rehydrateService,
   markServiceReadyForAssignment,
+  markServiceInExecution,
+  completeService,
   adjustPlannedServiceSchedule,
   adjustPlannedServiceRequirements,
   cancelService,

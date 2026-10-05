@@ -13,6 +13,8 @@ import {
   DomainValidationError,
   InvalidServiceStateTransitionError,
   markServiceReadyForAssignment,
+  markServiceInExecution,
+  completeService,
   rehydrateService,
   serializeRoutePlanSnapshot,
   ServiceCancellationConflictError,
@@ -209,6 +211,42 @@ describe("Service Domain — Step 9", () => {
       markServiceReadyForAssignment(
         cancelled,
         new Date("2026-08-02T15:00:00.000Z")
+      )
+    ).toThrow(InvalidServiceStateTransitionError);
+  });
+
+  it("advances READY -> IN_EXECUTION -> COMPLETED with timestamps and one version per transition", () => {
+    const ready = markServiceReadyForAssignment(
+      createPlannedService(),
+      new Date("2026-08-02T13:00:00.000Z")
+    ).service;
+    const executing = markServiceInExecution(
+      ready,
+      new Date("2026-08-02T14:00:00.000Z")
+    );
+    expect(executing.service.status).toBe("IN_EXECUTION");
+    expect(executing.service.executionStartedAt?.toISOString()).toBe(
+      "2026-08-02T14:00:00.000Z"
+    );
+    expect(executing.service.version).toBe(2);
+    expect(executing.events[0]?.type).toBe("Service.ExecutionStarted");
+
+    const completed = completeService(
+      executing.service,
+      new Date("2026-08-02T16:00:00.000Z")
+    );
+    expect(completed.service.status).toBe("COMPLETED");
+    expect(completed.service.completedAt?.toISOString()).toBe(
+      "2026-08-02T16:00:00.000Z"
+    );
+    expect(completed.service.version).toBe(3);
+    expect(completed.events[0]?.type).toBe("Service.Completed");
+    expect(completeService(completed.service, completed.service.updatedAt).events).toEqual([]);
+    expect(() =>
+      cancelService(
+        completed.service,
+        "OPERATIONAL",
+        new Date("2026-08-02T17:00:00.000Z")
       )
     ).toThrow(InvalidServiceStateTransitionError);
   });
